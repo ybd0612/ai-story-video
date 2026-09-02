@@ -1,0 +1,33 @@
+{
+  "name": "agent-story-video",
+  "version": "1.0.0",
+  "description": "Agent 故事短视频生成器：Agnes 配图、Edge TTS 配音与 Remotion 成片",
+  "scripts": {
+    "start": "npx remotion studio",
+    "build:story": "npm run render:video",
+    "typecheck": "tsc --noEmit",
+    "generate:images": "node scripts/generate-story-images.mjs",
+    "generate:tts": "node scripts/run-edge-tts.mjs",
+    "validate:story": "node scripts/validate-story.mjs",
+    "validate:audio": "node scripts/validate-audio-duration.mjs",
+    "save:story": "node scripts/save-story.mjs",
+    "approve:story": "node scripts/approve-story.mjs",
+    "prepare:story": "node scripts/prepare-story.mjs",
+    "render:video": "node scripts/render-video.mjs",
+    "make:video": "node scripts/make-video.mjs",
+    "upgrade": "npx remotion upgrade"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.459",
+    "@remotion/noise": "4.0.459",
+    "@remotion/transitions": "4.0.459",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "4.0.459",
+    "edge-tts": "1.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.11",
+    "typescript": "^5.7.2"
+  }
+}

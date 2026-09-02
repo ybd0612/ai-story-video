@@ -1,0 +1,16 @@
+node_modules/
+out/
+src/story/currentStory.json
+public/images/
+public/audio/
+.env
+.env.*
+!.env.example
+*.local
+story.approved
+story.approval-state.json
+story.json
+story.with-images.json
+story.with-audio.json
+story.with-images.json
+story.with-audio.json

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StoryVideoData",
+  "type": "object",
+  "required": ["id", "title", "topic", "style", "character", "scenes"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "topic": { "type": "string" },
+    "style": { "type": "string" },
+    "author": { "type": "string" },
+    "character": {
+      "type": "object",
+      "required": ["id", "name", "description", "visualTraits", "wardrobe"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "visualTraits": { "type": "string", "minLength": 1 },
+        "wardrobe": { "type": "string", "minLength": 1 },
+        "referenceImage": { "type": "string" }
+      }
+    },
+    "scenes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "narration", "imagePrompt", "durationInSeconds"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string" },
+          "narration": { "type": "string", "minLength": 1 },
+          "imagePrompt": { "type": "string", "minLength": 1 },
+          "durationInSeconds": { "type": "number", "exclusiveMinimum": 0 },
+          "subtitle": { "type": "string" },
+          "imageUrl": { "type": "string", "format": "uri" }
+        }
+      }
+    }
+  }
+}
