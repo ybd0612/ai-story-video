@@ -22,3 +22,7 @@ node --check scripts/render-video.mjs
 ```
 
 不要在没有密钥、用户确认和真实输入的情况下调用图片或配音服务。
+
+## 体积维护
+
+本项目不提供 Remotion Studio 网页预览，只保留命令行生成链路。`node_modules/.cache/` 和 `node_modules/.remotion/` 是可重建缓存，体积异常时可以清理后重新生成；不要清理 `package-lock.json`。

@@ -81,4 +81,7 @@ data/ 记录用户反馈和任务摘要
 - `create-video` 已归入固定代码路径 `app/create-video/`。
 - 现有故事、图片、音频和视频已迁移到时间戳任务目录。
 - 已建立项目级 `.gitignore`。
-- 已初始化 Git，首个提交待验证后创建。
+- 已移除 Remotion Studio 启动入口和未使用的 transitions 依赖。
+- 已删除当前 StoryVideo 未引用的旧视觉组件 `DataViz.tsx`、`GlobalLayers.tsx`、`TextAnimations.tsx`。
+- 已清理 Remotion 本地缓存，`app` 体积从约 741 MB 降至约 225 MB。
+- 已初始化 Git，并完成首个整理提交。
