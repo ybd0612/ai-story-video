@@ -26,7 +26,7 @@
 
 ## 标准命令
 
-在 `create-video` 目录执行：
+在 `app/create-video` 目录执行：
 
 ```powershell
 npm run typecheck
@@ -42,12 +42,12 @@ npm run build:story
 npm run make:video
 ```
 
-输出：`out/story-video.mp4`。
+输出：`jobs/<job-id>/output/story-video.mp4`，并复制到 `outputs/<job-id>/story-video.mp4`。
 
 ## 安全与配置
 
 - Agnes API Key 只能从系统环境变量 `AGNES_API_KEY` 读取。
 - 禁止把 API Key 写入代码、故事 JSON、文档、Skill、日志或 Git。
-- 图片默认保存到 `public/images/`，音频默认保存到 `public/audio/`。
-- 已存在的本地图片会自动复用，避免重复消耗图片额度。
+- 图片和音频保存到当前任务的 `jobs/<job-id>/media/`。
+- 图片只在当前任务内复用，不跨任务共享，避免产物串线。
 - Agnes 默认使用 `1K + 9:16`，批量脚本按实际 RPM 串行限速。

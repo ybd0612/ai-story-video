@@ -28,6 +28,6 @@ npm run approve:story
 npm run make:video
 ```
 
-`make:video` 会校验审核指纹；故事内容在审核后变更时会拒绝生产。流程会自动复用已有图片，生成旁白后按真实音频时长加 0.5 秒调整镜头，并在 Remotion 渲染前执行硬校验。默认输出：`out/story-video.mp4`
+`make:video` 会校验审核指纹；故事内容在审核后变更时会拒绝生产。流程会在独立任务目录中生成图片、旁白和中间 JSON，按真实音频时长加 0.5 秒调整镜头，并在 Remotion 渲染前执行硬校验。输出位置见项目总纲的任务目录约定。
 
 完整工作流和环境变量说明见 `AGENT_STORY_WORKFLOW.md`。
