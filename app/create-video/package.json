@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Agent 故事短视频生成器：Agnes 配图、Edge TTS 配音与 Remotion 成片",
   "scripts": {
-    "start": "npx remotion studio",
     "build:story": "npm run render:video",
     "typecheck": "tsc --noEmit",
     "generate:images": "node scripts/generate-story-images.mjs",
@@ -20,7 +19,6 @@
   "dependencies": {
     "@remotion/cli": "4.0.459",
     "@remotion/noise": "4.0.459",
-    "@remotion/transitions": "4.0.459",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "remotion": "4.0.459",
