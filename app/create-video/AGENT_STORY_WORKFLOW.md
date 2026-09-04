@@ -64,6 +64,15 @@ Agent 必须输出符合 `story.schema.json` 的 JSON。每个镜头至少包含
 6. 故事结尾必须有情绪落点：反转、领悟、温暖或行动。
 7. 涉及真实人物、医疗、法律和新闻时，不编造事实，不把虚构故事包装成真实经历。
 
+## 运行前检查
+
+```powershell
+npm run doctor
+npm run dry-run -- ./story.json
+```
+
+`doctor` 只检查运行环境和密钥是否存在，不输出密钥；`dry-run` 只读取故事并检查基本结构，不调用图片、配音服务，也不渲染视频。
+
 ## 本地开发
 
 在 `app/create-video` 目录执行：

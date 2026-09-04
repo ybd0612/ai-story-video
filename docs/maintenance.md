@@ -14,12 +14,22 @@
 
 ```powershell
 cd app/create-video
+npm run doctor
 npm run typecheck
+npm test
 node --check scripts/make-video.mjs
 node --check scripts/generate-story-images.mjs
 node --check scripts/prepare-story.mjs
 node --check scripts/render-video.mjs
 ```
+
+没有真实输入或密钥时，先执行无副作用预检：
+
+```powershell
+npm run dry-run -- ./story.json
+```
+
+每个任务会在创建后写入 `jobs/<job-id>/status.json`，记录阶段状态、失败原因和可重试阶段。图片和渲染输出均拒绝无条件覆盖；失败任务应根据状态文件定位阶段后重试。
 
 不要在没有密钥、用户确认和真实输入的情况下调用图片或配音服务。
 

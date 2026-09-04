@@ -26,6 +26,9 @@
 | 最终输出目录 | `outputs/<任务 ID>/` |
 | 图片和音频 | 当前任务的 `jobs/<任务 ID>/media/` |
 | 生成入口 | 在 `app/create-video/` 执行 `npm run make:video` |
+| 环境检查 | 在 `app/create-video/` 执行 `npm run doctor` |
+| 无副作用预检 | 在 `app/create-video/` 执行 `npm run dry-run -- <story.json>` |
+| 任务状态 | `jobs/<任务 ID>/status.json` |
 | 图片模型 | `agnes-image-2.5-flash` |
 | 旁白 | Edge TTS，默认 `zh-CN-YunxiNeural` |
 | API Key | 环境变量 `AGNES_API_KEY`，禁止写入文件 |

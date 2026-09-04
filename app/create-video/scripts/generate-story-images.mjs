@@ -23,6 +23,34 @@ if (!ACTUAL_RPM[USER_TYPE]?.[SIZE]) throw new Error(`不支持的用户类型或
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const intervalMs = Math.ceil(60_000 / ACTUAL_RPM[USER_TYPE][SIZE]);
+const REQUEST_TIMEOUT_MS = Number(process.env.AGNES_REQUEST_TIMEOUT_MS ?? '60000');
+const MAX_RETRIES = Number(process.env.AGNES_MAX_RETRIES ?? '3');
+
+const fetchWithRetry = async (url, options = {}) => {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      if (response.ok || (response.status < 500 && response.status !== 429) || attempt === MAX_RETRIES) return response;
+      const retryAfter = Number(response.headers.get('retry-after'));
+      const delay = Number.isFinite(retryAfter) ? retryAfter * 1000 : 2 ** attempt * 1000;
+      await wait(delay);
+    } catch (error) {
+      if (attempt === MAX_RETRIES) throw new Error(`请求失败（重试 ${MAX_RETRIES} 次）：${error.message}`);
+      await wait(2 ** attempt * 1000);
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+  throw new Error('请求失败：超过最大重试次数');
+};
+
+const writeAtomically = async (file, content) => {
+  const temporary = `${file}.tmp-${process.pid}`;
+  await fs.writeFile(temporary, content);
+  await fs.rename(temporary, file);
+};
 const inputPath = path.resolve(INPUT);
 const outputPath = path.resolve(OUTPUT);
 const imageDir = path.resolve(IMAGE_DIR);
@@ -57,7 +85,7 @@ for (const [index, scene] of story.scenes.entries()) {
 
   if (index > 0) await wait(intervalMs);
   console.log(`[${index + 1}/${story.scenes.length}] 生成 ${scene.id}，档位 ${SIZE}，比例 ${RATIO}`);
-  const response = await fetch(ENDPOINT, {
+  const response = await fetchWithRetry(ENDPOINT, {
     method: 'POST',
     headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -76,9 +104,9 @@ for (const [index, scene] of story.scenes.entries()) {
   const url = payload.data?.[0]?.url;
   if (!url) throw new Error(`第 ${scene.id} 个镜头响应缺少 data[0].url`);
 
-  const imageResponse = await fetch(url);
+  const imageResponse = await fetchWithRetry(url);
   if (!imageResponse.ok) throw new Error(`第 ${scene.id} 个镜头图片下载失败：HTTP ${imageResponse.status}`);
-  await fs.writeFile(imagePath, Buffer.from(await imageResponse.arrayBuffer()));
+  await writeAtomically(imagePath, Buffer.from(await imageResponse.arrayBuffer()));
   scenes.push({ ...scene, imagePath: path.relative(PUBLIC_ROOT, imagePath).replaceAll('\\', '/') });
 }
 
