@@ -11,7 +11,10 @@ const run = (command, args, env = {}) => new Promise((resolve, reject) => {
 const currentStory = path.resolve(process.env.STORY_CURRENT_FILE ?? './src/story/sampleStory.json');
 const publicRoot = path.resolve(process.env.JOB_PUBLIC_ROOT ?? './public');
 const storyProps = JSON.stringify({ story: JSON.parse(await fs.readFile(currentStory, 'utf8')) });
-await run(process.execPath, ['scripts/validate-audio-duration.mjs', currentStory], { STORY_PUBLIC_ROOT: publicRoot });
+await run(process.execPath, ['scripts/validate-audio-duration.mjs'], {
+  STORY_FILE: currentStory,
+  STORY_PUBLIC_ROOT: publicRoot,
+});
 await run(process.execPath, [
   'node_modules/@remotion/cli/remotion-cli.js',
   'render',

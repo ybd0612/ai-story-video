@@ -66,6 +66,7 @@ await runStage(stateFile, taskState, 'tts', () => run(python, ['scripts/generate
 }));
 taskState = JSON.parse(await fs.readFile(stateFile, 'utf8'));
 await runStage(stateFile, taskState, 'audio-validation', () => run(process.execPath, ['scripts/validate-audio-duration.mjs', withAudio], {
+  STORY_FILE: withAudio,
   STORY_PUBLIC_ROOT: paths.root,
 }));
 taskState = JSON.parse(await fs.readFile(stateFile, 'utf8'));
