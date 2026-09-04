@@ -33,7 +33,7 @@ ffprobe 测量音频并回填镜头时长（音频 + 0.5 秒）
   ↓
 旁白时长硬校验
   ↓
-更新 currentStory.json
+任务故事作为 Remotion props 传入
   ↓
 Remotion StoryVideo 渲染 + MP4 验收
 ```
@@ -163,7 +163,7 @@ npm run approve:story
 npm run make:video
 ```
 
-`make:video` 会检查审核文件。没有确认文件时会立即终止，不调用 Agnes、不生成 TTS，也不渲染视频。通过确认后，命令依次创建时间戳任务目录、执行 Agnes 配图、下载本地图片、Edge TTS 配音、生成任务工作文件、渲染到任务 `output/`，最后复制到 `outputs/<job-id>/`。图片和音频只在当前任务内复用，任务之间不会共享或覆盖。
+`make:video` 会检查审核文件。没有确认文件时会立即终止，不调用 Agnes、不生成 TTS，也不渲染视频。通过确认后，命令依次创建时间戳任务目录、执行 Agnes 配图、下载本地图片、Edge TTS 配音、生成任务工作文件，并通过 Remotion `--props` 将当前任务故事传入渲染，不再复制到共享的 `src/story/currentStory.json`。最后复制到 `outputs/<job-id>/`。图片和音频只在当前任务内复用，任务之间不会共享或覆盖。
 
 > 说明：当前项目负责“故事 JSON 的保存、审核门禁和媒体生产”。聊天中的 Agent 负责根据主题生成草稿 JSON；项目尚未绑定独立的文本模型 API。
 

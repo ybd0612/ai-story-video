@@ -1,10 +1,13 @@
-import currentStory from './currentStory.json';
-import { StoryVideoData } from './types';
+import { SAMPLE_STORY } from './sampleStory';
+import { StoryVideoData, validateStory } from './types';
 
-/** 读取 Agent/素材脚本最终写入的当前故事。 */
-export const getStory = (): StoryVideoData => currentStory as StoryVideoData;
+/** 返回可用于 Remotion 默认预览的公开示例故事。 */
+export const getStory = (): StoryVideoData => SAMPLE_STORY;
 
 export const getStoryFromJson = (value: unknown): StoryVideoData => {
   if (!value || typeof value !== 'object') throw new Error('故事 JSON 必须是对象');
-  return value as StoryVideoData;
+  const story = value as StoryVideoData;
+  const errors = validateStory(story);
+  if (errors.length > 0) throw new Error(`故事运行时校验失败：${errors.join('；')}`);
+  return story;
 };
