@@ -1,1 +1,35 @@
-{"schemaVersion":1,"templates":[{"id":"story-title","kind":"title","path":"templates/title-template.md","version":"1.0.0"},{"id":"story-script","kind":"script","path":"templates/script-template.md","version":"1.0.0"}],"workflows":[{"id":"story-video","path":"templates/workflows/story-video.workflow.json","version":"1.0.0"}],"profiles":[{"id":"douyin-vertical","path":"templates/platform/douyin-vertical.profile.json","version":"1.0.0"}]}
+{
+  "schemaVersion": 1,
+  "templates": [
+    {
+      "id": "story-title",
+      "kind": "title",
+      "path": "templates/title-template.md",
+      "version": "1.0.0",
+      "sha256": "8ea042fd37beab1b3fdd1c965817625d8b346dd24d491bcd2d86f8675987a69d"
+    },
+    {
+      "id": "story-script",
+      "kind": "script",
+      "path": "templates/script-template.md",
+      "version": "1.0.0",
+      "sha256": "9451b3481cc67e06c17dcffef4faf58e8e929fafdfc067f630897b93e89462b9"
+    }
+  ],
+  "workflows": [
+    {
+      "id": "story-video",
+      "path": "templates/workflows/story-video.workflow.json",
+      "version": "1.0.0",
+      "sha256": "3210a39187b3dd891aabc1fa31b7db714e879cecf92279e9dc4b2ad8ee9b2d52"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "douyin-vertical",
+      "path": "templates/platform/douyin-vertical.profile.json",
+      "version": "1.0.0",
+      "sha256": "47990447a63e3853f0c11c37a68916d5be22165eceb15645fa85d55edd13b443"
+    }
+  ]
+}

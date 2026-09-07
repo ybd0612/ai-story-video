@@ -64,7 +64,10 @@ export const checkCatalogHashes = async () => {
   const errors = [];
   for (const entry of [...(catalog.templates ?? []), ...(catalog.workflows ?? []), ...(catalog.profiles ?? [])]) {
     const target = path.join(PROJECT_ROOT, entry.path);
-    try { await fileInfo(target); } catch { errors.push(`catalog path missing: ${entry.path}`); }
+    try {
+      const info = await fileInfo(target);
+      if (!entry.sha256 || entry.sha256 !== info.sha256) errors.push(`catalog hash mismatch: ${entry.path}`);
+    } catch { errors.push(`catalog path missing: ${entry.path}`); }
   }
   if (errors.length) throw new Error(`Catalog consistency failed: ${errors.join('; ')}`);
   return true;
