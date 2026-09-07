@@ -60,6 +60,10 @@ if (!story.character?.description || !story.character?.visualTraits || !story.ch
   throw new Error('故事缺少 character.description、visualTraits 或 wardrobe，无法保证人物一致性');
 }
 if (!Array.isArray(story.scenes) || story.scenes.length === 0) throw new Error('story.scenes 不能为空');
+const targetSceneId = process.env.TARGET_SCENE_ID ? String(process.env.TARGET_SCENE_ID) : null;
+if (targetSceneId && !story.scenes.some((scene) => String(scene.id) === targetSceneId)) {
+  throw new Error(`无效 SCENE_ID：${targetSceneId}`);
+}
 
 await fs.mkdir(imageDir, { recursive: true });
 const scenes = [];
@@ -74,7 +78,7 @@ const buildPrompt = (scene) => [
 ].join('\n');
 
 for (const [index, scene] of story.scenes.entries()) {
-  if (process.env.TARGET_SCENE_ID && String(scene.id) !== String(process.env.TARGET_SCENE_ID)) {
+  if (targetSceneId && String(scene.id) !== targetSceneId) {
     const imagePath = path.join(imageDir, `${String(index + 1).padStart(2, '0')}-${scene.id}.png`);
     const existing = await fs.access(imagePath).then(() => true).catch(() => false);
     if (!existing) throw new Error(`目标镜头补偿时发现缺失图片：${scene.id}`);
