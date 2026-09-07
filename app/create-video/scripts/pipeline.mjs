@@ -19,6 +19,8 @@ export async function executePipeline({ source, jobId: requestedJobId = null, re
   const jobId = requestedJobId ?? createJobId(sourceStory.title ?? sourceStory.name ?? 'story');
   const paths = getJobPaths(jobId); const stateFile = path.join(paths.root, 'status.json');
   const lockFile = path.join(paths.root, 'run.lock'); const currentFingerprint = fingerprint(sourceStory);
+  if (retryStage && !['images', 'tts'].includes(retryStage)) throw new Error(`不支持镜头级补偿阶段：${retryStage}`);
+  if (sceneId && !sourceStory.scenes?.some((scene) => String(scene.id) === String(sceneId))) throw new Error(`无效 SCENE_ID：${sceneId}`);
   if (await exists(lockFile)) throw new Error(`任务正在运行：${jobId}`);
   await fs.mkdir(paths.root, { recursive: true }); await fs.writeFile(lockFile, `${process.pid}\n`, { flag: 'wx' });
   try {
@@ -52,7 +54,11 @@ export async function executePipeline({ source, jobId: requestedJobId = null, re
     for (const stage of STAGE_ORDER.slice(startIndex)) {
       state = await readTaskState(stateFile);
       const targeted = retryStage && stage === retryStage;
-      if (!targeted && !retryStage && state.stages[stage]?.status === 'completed' && await stageIsComplete(stage, contexts[stage])) continue;
+      if (!targeted && !retryStage && state.stages[stage]?.status === 'completed') {
+        const valid = await stageIsComplete(stage, contexts[stage]);
+        if (valid) continue;
+        throw new Error(`阶段 ${stage} 状态为 completed 但产物契约不通过，拒绝静默覆盖`);
+      }
       if (stage === 'deliver') { await runStage(stateFile, state, stage, async () => { await fs.mkdir(path.dirname(delivered), { recursive: true }); await fs.copyFile(videoOutput, delivered); await validateDeliverContract(contexts.deliver); }); }
       else { const [command, args, env] = commands[stage]; await runStage(stateFile, state, stage, () => run(command, args, { ...env, ...(sceneId ? { TARGET_SCENE_ID: sceneId } : {}) })); }
     }

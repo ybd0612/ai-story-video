@@ -30,6 +30,14 @@ export const validateStageContract = async ({ stage, paths, input, output, scene
     const parsed = await json(output);
     const actual = sceneIds(parsed);
     if (expected.length && (actual.length !== expected.length || actual.some((id, index) => id !== expected[index]))) throw new Error(`${stage} scene id set mismatch`);
+    for (const scene of parsed.scenes ?? []) {
+      for (const field of ['imagePath', 'audioPath']) {
+        if (!scene[field]) continue;
+        const artifact = path.resolve(root, scene[field]);
+        if (!within(root, artifact)) throw new Error(`${stage} ${field} escapes job root for scene ${scene.id}`);
+        await existsNonEmpty(artifact);
+      }
+    }
   }
   if (stage === 'audio-validation') {
     const marker = path.join(paths.work, 'audio-validation.json');

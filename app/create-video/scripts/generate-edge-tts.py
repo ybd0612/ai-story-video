@@ -50,9 +50,21 @@ async def main():
         if target_scene and str(scene.get("id")) != target_scene:
             if not output_path.exists():
                 raise ValueError(f"目标镜头补偿时发现缺失音频：{scene['id']}")
-            audio_duration = get_audio_duration(output_path)
+            try:
+                audio_duration = get_audio_duration(output_path)
+            except (OSError, subprocess.SubprocessError, ValueError) as error:
+                raise ValueError(f"已有音频无效，拒绝复用：{output_path}") from error
             updated.append({**scene, "audioDurationInSeconds": round(audio_duration, 3), "audioPath": (Path("media") / "audio" / filename).as_posix()})
             continue
+        if output_path.exists() and not target_scene:
+            try:
+                audio_duration = get_audio_duration(output_path)
+                scene_duration = max(float(scene.get("durationInSeconds", 0)), audio_duration + PAUSE_SECONDS)
+                updated.append({**scene, "durationInSeconds": round(scene_duration, 3), "audioDurationInSeconds": round(audio_duration, 3), "audioPath": (Path("media") / "audio" / filename).as_posix()})
+                print(f"复用有效旁白 {output_path}")
+                continue
+            except (OSError, subprocess.SubprocessError, ValueError):
+                output_path.unlink(missing_ok=True)
         communicate = edge_tts.Communicate(
             scene["narration"],
             VOICE,
