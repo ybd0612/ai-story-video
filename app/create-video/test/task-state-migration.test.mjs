@@ -12,9 +12,11 @@ test('v1 state migration records history and lifecycle events', async () => {
   const state = await readTaskState(file);
   assert.equal(state.schemaVersion, 2);
   assert.equal(state.migrationHistory.length, 1);
-  assert.deepEqual(state.migrationHistory[0], { from: 1, to: 2, migratedAt: state.migrationHistory[0].migratedAt });
+  assert.equal(state.migrationHistory[0].from, 1);
+  assert.equal(state.migrationHistory[0].to, 2);
+  assert.ok(state.migrationHistory[0].migratedAt);
   const events = (await fs.readFile(path.join(directory, 'events.jsonl'), 'utf8')).trim().split('\n').map((line) => JSON.parse(line));
   assert.deepEqual(events.map((event) => event.event), ['migration_started', 'migration_completed']);
-  assert.ok(await fs.stat(`${file}.v1.bak`));
+  assert.ok(await fs.stat(state.migrationHistory[0].backup));
   await fs.rm(directory, { recursive: true, force: true });
 });
