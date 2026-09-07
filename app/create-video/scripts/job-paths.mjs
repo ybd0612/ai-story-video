@@ -27,6 +27,10 @@ export const getJobPaths = (jobId) => {
   return {
     root,
     input: path.join(root, 'input'),
+    inputStory: path.join(root, 'input', 'story.source.json'),
+    inputApproval: path.join(root, 'input', 'story.approved'),
+    snapshotManifest: path.join(root, 'input', 'snapshot.manifest.json'),
+    events: path.join(root, 'events.jsonl'),
     work: path.join(root, 'work'),
     images: path.join(root, 'media', 'images'),
     audio: path.join(root, 'media', 'audio'),

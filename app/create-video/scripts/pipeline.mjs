@@ -5,6 +5,7 @@ import { spawn } from 'node:child_process';
 import { createJobId, getJobPaths, OUTPUTS_ROOT } from './job-paths.mjs';
 import { createTaskState, readTaskState, runStage, updateTaskState, markInterrupted, appendEvent, STAGE_ORDER } from './task-state.mjs';
 import { stageIsComplete, validateDeliverContract } from './stage-contracts.mjs';
+import { createSnapshot, readSnapshotManifest, verifySnapshotImmutable } from './task-snapshot.mjs';
 
 const run = (command, args, env = {}) => new Promise((resolve, reject) => {
   const child = spawn(command, args, { stdio: 'inherit', shell: false, env: { ...process.env, ...env }, cwd: process.cwd() });
@@ -34,22 +35,23 @@ export async function executePipeline({ source, jobId: requestedJobId = null, re
     if (resume) {
       state = await markInterrupted(stateFile);
       if (state.status === 'delivered') throw new Error('已交付任务拒绝 resume');
-      sourceStory = JSON.parse(await fs.readFile(path.join(paths.input, 'story.source.json'), 'utf8'));
+      const snapshot = await readSnapshotManifest(paths);
+      await verifySnapshotImmutable({ paths, storyHash: snapshot.storyHash, approvalHash: snapshot.approvalHash });
+      sourceStory = JSON.parse(await fs.readFile(paths.inputStory, 'utf8'));
       if (state.storyFingerprint !== fingerprint(sourceStory)) throw new Error('job input 故事指纹不匹配，请创建新 job');
       if (sceneId && !sourceStory.scenes?.some((scene) => String(scene.id) === String(sceneId))) throw new Error(`无效 SCENE_ID：${sceneId}`);
     } else {
       if (await exists(stateFile)) throw new Error(`任务目录已存在，拒绝覆盖：${paths.root}`);
       for (const directory of [paths.input, paths.work, paths.images, paths.audio, paths.output]) await fs.mkdir(directory, { recursive: true });
-      await fs.copyFile(sourcePath, path.join(paths.input, 'story.source.json'));
       const approvalSource = process.env.STORY_APPROVAL_FILE ? path.resolve(process.env.STORY_APPROVAL_FILE) : path.join(path.dirname(sourcePath), 'story.approved');
-      await fs.copyFile(approvalSource, path.join(paths.input, 'story.approved'));
-      state = await updateTaskState(stateFile, createTaskState({ jobId, source: path.join(paths.input, 'story.source.json'), storyFingerprint: currentFingerprint }));
+      await createSnapshot({ paths, sourcePath, approvalPath: approvalSource, storyFingerprint: currentFingerprint });
+      state = await updateTaskState(stateFile, createTaskState({ jobId, source: paths.inputStory, storyFingerprint: currentFingerprint }));
       await appendEvent(eventsFile, 'job_created', { jobId });
     }
-    const approvalFile = path.join(paths.input, 'story.approved');
+    const approvalFile = paths.inputApproval;
     const approval = JSON.parse(await fs.readFile(approvalFile, 'utf8'));
     if (approval.fingerprint !== fingerprint(sourceStory)) throw new Error('故事内容已在审核后变更，请重新执行保存和审核流程');
-    const jobSource = path.join(paths.input, 'story.source.json');
+    const jobSource = paths.inputStory;
     const withImages = path.join(paths.work, 'story.with-images.json'); const withAudio = path.join(paths.work, 'story.with-audio.json'); const currentStory = path.join(paths.work, 'currentStory.json'); const videoOutput = path.join(paths.output, 'story-video.mp4'); const delivered = path.join(OUTPUTS_ROOT, jobId, 'story-video.mp4');
     const expectedScenes = sourceStory.scenes?.map((scene) => String(scene.id)) ?? [];
     const contexts = {
