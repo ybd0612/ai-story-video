@@ -15,6 +15,5 @@ test('layout migration is idempotent and rejects target drift', async () => {
   await assert.rejects(() => mirror(), /Migration target differs/);
   await fs.writeFile(path.join(root, targets[0]), original);
   await assert.doesNotReject(() => check());
-  await Promise.all(targets.map((target) => fs.rm(path.join(root, target), { force: true })));
-  await fs.rm(path.join(root, 'data/.migration/layout-map.json'), { force: true });
+  // Mirror outputs are intentionally retained as local compatibility artifacts; data/.migration is ignored.
 });
