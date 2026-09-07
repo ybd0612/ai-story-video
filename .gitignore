@@ -10,6 +10,11 @@ data/
 jobs/
 outputs/
 
+# B 阶段兼容镜像产物（由 migrate-layout mirror 生成，不作为新 SSOT 提交）
+templates/story/title-template.md
+templates/story/script-template.md
+data/.migration/
+
 # Node 依赖与构建缓存
 **/node_modules/
 **/out/

@@ -22,7 +22,7 @@
 4. 每个镜头只描述一个动作或情绪变化，图片提示词不要求图片生成文字。
 5. 旁白必须适合口播，前三秒有冲突、悬念或反差，结尾有情绪落点。
 6. 涉及真实人物、医疗、法律、新闻时，不编造事实，不把虚构内容包装成真实经历。
-7. 完成创作任务后，将任务摘要和用户反馈记录到 `data/tasks.md` 或 `data/feedback/`；发布内容后更新 `data/history.md`；确认新的表达偏好后更新 `data/preferences.md`。
+7. 完成创作任务后，将任务摘要写入 `data/operations/tasks.md`，用户反馈写入 `data/feedback/`；发布内容与复盘写入 `data/analytics/history.md`；确认新的表达偏好后更新 `data/context/preferences.md`。旧 `data/tasks.md`、`data/history.md`、`data/preferences.md` 仅只读兼容，不再写入。
 
 ## 标准命令
 
