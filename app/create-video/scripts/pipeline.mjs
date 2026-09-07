@@ -14,6 +14,11 @@ const fingerprint = (story) => crypto.createHash('sha256').update(JSON.stringify
 const exists = async (file) => fs.access(file).then(() => true).catch(() => false);
 
 export async function executePipeline({ source, jobId: requestedJobId = null, resume = false, retryStage = null, sceneId = null } = {}) {
+  if (resume && !requestedJobId) {
+    const error = new Error('resume requires JOB_ID');
+    error.code = 'JOB_ID_REQUIRED';
+    throw error;
+  }
   const sourcePath = path.resolve(source ?? './story.json');
   let sourceStory = null;
   if (!resume) sourceStory = JSON.parse(await fs.readFile(sourcePath, 'utf8'));
