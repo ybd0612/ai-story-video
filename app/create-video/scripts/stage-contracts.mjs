@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { STAGE_ORDER } from './task-state.mjs';
+import { OUTPUTS_ROOT } from './job-paths.mjs';
 
 const existsNonEmpty = async (file) => {
   const stat = await fs.stat(file);
@@ -14,11 +15,16 @@ const within = (root, file) => {
 };
 const sceneIds = (story) => (story.scenes ?? []).map((scene) => String(scene.id));
 
-export const validateStageContract = async ({ stage, paths, input, output, sceneIds: expected = [] }) => {
+export const validateStageContract = async ({ stage, paths, input, output, sceneIds: expected = [], allowedInputRoots = [] }) => {
   const root = path.resolve(paths.root);
-  for (const candidate of [input, output].filter(Boolean)) {
-    if (!within(root, candidate)) throw new Error(`${stage} artifact escapes job root: ${candidate}`);
-    await existsNonEmpty(candidate);
+  const inputRoots = [root, ...allowedInputRoots.map((value) => path.resolve(value))];
+  if (input) {
+    if (!inputRoots.some((candidateRoot) => within(candidateRoot, input))) throw new Error(`${stage} artifact escapes controlled input roots: ${input}`);
+    await existsNonEmpty(input);
+  }
+  if (output) {
+    if (!within(root, output)) throw new Error(`${stage} artifact escapes job root: ${output}`);
+    await existsNonEmpty(output);
   }
   if (output && output.endsWith('.json')) {
     const parsed = await json(output);
@@ -37,8 +43,10 @@ export const hashFile = async (file) => {
   return crypto.createHash('sha256').update(content).digest('hex');
 };
 
-export const validateDeliverContract = async ({ rendered, delivered, paths }) => {
-  if (!within(paths.root, rendered) || !within(paths.root, delivered)) throw new Error('deliver artifact escapes job root');
+export const validateDeliverContract = async ({ rendered, delivered, paths, outputsRoot = OUTPUTS_ROOT }) => {
+  const allowedOutputRoot = path.join(path.resolve(outputsRoot), paths.root.split(path.sep).pop());
+  if (!within(paths.root, rendered)) throw new Error('rendered artifact escapes job root');
+  if (!within(allowedOutputRoot, delivered)) throw new Error('delivered artifact escapes controlled outputs root');
   await existsNonEmpty(rendered); await existsNonEmpty(delivered);
   const [sourceHash, targetHash] = await Promise.all([hashFile(rendered), hashFile(delivered)]);
   if (sourceHash !== targetHash) throw new Error('deliver output hash mismatch');

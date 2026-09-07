@@ -36,10 +36,11 @@ export async function executePipeline({ source, jobId: requestedJobId = null, re
     const approvalFile = process.env.STORY_APPROVAL_FILE ? path.resolve(process.env.STORY_APPROVAL_FILE) : path.join(path.dirname(sourcePath), 'story.approved');
     const approval = JSON.parse(await fs.readFile(approvalFile, 'utf8'));
     if (approval.fingerprint !== currentFingerprint) throw new Error('故事内容已在审核后变更，请重新执行保存和审核流程');
+    const jobSource = path.join(paths.input, 'story.source.json');
     const withImages = path.join(paths.work, 'story.with-images.json'); const withAudio = path.join(paths.work, 'story.with-audio.json'); const currentStory = path.join(paths.work, 'currentStory.json'); const videoOutput = path.join(paths.output, 'story-video.mp4'); const delivered = path.join(OUTPUTS_ROOT, jobId, 'story-video.mp4');
     const expectedScenes = sourceStory.scenes?.map((scene) => String(scene.id)) ?? [];
     const contexts = {
-      validate: { paths, input: sourcePath }, images: { paths, input: sourcePath, output: withImages, sceneIds: expectedScenes }, tts: { paths, input: withImages, output: withAudio, sceneIds: expectedScenes },
+      validate: { paths, input: jobSource }, images: { paths, input: jobSource, output: withImages, sceneIds: expectedScenes }, tts: { paths, input: withImages, output: withAudio, sceneIds: expectedScenes },
       'audio-validation': { paths, input: withAudio, output: withAudio, sceneIds: expectedScenes }, prepare: { paths, input: withAudio, output: currentStory, sceneIds: expectedScenes }, render: { paths, input: currentStory, output: videoOutput }, deliver: { paths, rendered: videoOutput, delivered },
     };
     const commands = {
