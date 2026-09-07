@@ -15,12 +15,12 @@
  templates/         分类可复用创作模板（workflows/story/style/voice/platform/policy）
 ```
 
-`data/`、`.claude/`、`.neuralmemory/`、`.workbuddy/`、`jobs/` 和 `outputs/` 均不会提交到 Git。
+`data/context/`、`data/knowledge/`、`data/feedback/`、`data/analytics/`、`data/operations/`、`.claude/`、`.neuralmemory/`、`.workbuddy/`、`jobs/` 和 `outputs/` 均不会提交到 Git；`data/memory/` 仅提交 DSP 自身的结构化创作规则。
 
 ## 标准生成流程
 
-1. Agent 默认读取 `data/context/profile.md`、`data/context/preferences.md`，按任务选择 `data/knowledge/`、`data/feedback/`、`data/analytics/`；`data/operations/` 仅维护和复盘时读取。
-2. 生成或接收故事 JSON，并等待用户确认。
+1. 生成故事前先读取 `data/memory/style-preferences.json`，按题材匹配项目创作风格；再由 Agent 读取 `data/context/profile.md`、`data/context/preferences.md`，按任务选择 `data/knowledge/`、`data/feedback/`、`data/analytics/`；`data/operations/` 仅维护和复盘时读取。
+2. 生成或接收故事 JSON；若草稿未显式填写 `style`，保存故事时自动注入匹配的项目风格，并等待用户确认。
 3. 每次运行创建 `jobs/<时间戳>-<任务名>/`。
 4. 图片、音频、JSON 中间文件和视频全部写入本次任务目录。
 5. 最终视频复制到 `outputs/<任务 ID>/`，不会覆盖其他任务。

@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { resolveStoryStyle } from './style-memory.mjs';
 
 const inputFile = process.env.STORY_DRAFT_FILE ?? process.argv[2] ?? './story.draft.json';
 const outputFile = path.resolve(process.env.STORY_FILE ?? './story.json');
@@ -8,6 +9,12 @@ const approvalFile = path.join(path.dirname(outputFile), 'story.approved');
 const approvalStateFile = path.join(path.dirname(outputFile), 'story.approval-state.json');
 const schemaRequired = ['id', 'title', 'topic', 'style', 'character', 'scenes'];
 const draft = JSON.parse(await fs.readFile(path.resolve(inputFile), 'utf8'));
+const resolvedStyle = await resolveStoryStyle({
+  topic: `${draft.topic ?? ''} ${draft.title ?? ''}`,
+  style: draft.style,
+  memoryFile: process.env.STYLE_MEMORY_FILE,
+});
+if (!draft.style && resolvedStyle.style) draft.style = resolvedStyle.style;
 
 for (const key of schemaRequired) {
   if (!draft[key]) throw new Error(`故事缺少必填字段：${key}`);

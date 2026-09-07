@@ -10,7 +10,7 @@
 
 ### 数据层
 
-`data/` 是用户隐私目录。Agent 每次创作前读取其中的资料、偏好、知识、历史和反馈；用户通过 Agent 提出的修改意见也写回此目录。
+`data/` 是项目运行时数据目录。其中 `data/memory/` 保存 DSP 自身可复用的创作规则，是项目记忆 SSOT；`data/context/`、`data/knowledge/`、`data/feedback/` 和 `data/analytics/` 保存用户上下文、知识、反馈和历史，默认不提交。Agent 每次创作前先读取项目记忆，再按任务读取其他资料；用户通过 Agent 提出的修改意见也写回对应目录。`.workbuddy/` 仅属于开发工具，不参与创作记忆。
 
 ### 任务层
 

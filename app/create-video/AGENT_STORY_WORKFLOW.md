@@ -1,6 +1,6 @@
 # Agent 故事短视频工作流
 
-> D 阶段文档状态：默认读取 `data/context` 与分类 `templates`；旧根数据/模板仅只读兼容。
+> D 阶段文档状态：默认读取 `data/memory`、`data/context` 与分类 `templates`；旧根数据/模板仅只读兼容。
 
 > 本文档隶属 [DSP 项目总纲](../../PROJECT_INDEX.md)，路径和任务隔离规则以总纲为准。
 
@@ -17,7 +17,9 @@
 ```text
 用户主题
   ↓
-Agent 输出 story.draft.json
+读取 `data/memory/style-preferences.json`，按题材匹配默认风格
+  ↓
+Agent 输出 story.draft.json（未指定 style 时自动注入项目风格）
   ↓
 保存 + 结构校验 + 清除旧审核
   ↓
@@ -139,7 +141,7 @@ npm run generate:tts
 
 ## 故事审核与一键生成
 
-Agent 根据用户主题生成 `story.draft.json` 后，先保存为待审核故事：
+Agent 根据用户主题和 `data/memory/style-preferences.json` 生成 `story.draft.json` 后，先保存为待审核故事；若草稿未填写 `style`，`save:story` 会按题材自动注入项目记忆中的默认风格：
 
 ```powershell
 npm run save:story -- ./story.draft.json

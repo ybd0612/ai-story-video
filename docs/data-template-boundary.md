@@ -271,6 +271,8 @@ Agent 选择工作流模板
 
 ```text
 data       = 可变化的事实、上下文和反馈
- templates = 可复用的规则、结构和风格
+ templates = 可复用的静态规则、结构和风格
+
+`data/memory/` = DSP 在运行中沉淀的、按题材匹配的项目创作记忆；它与 `.workbuddy/` 等开发工具记忆隔离。
  jobs       = 单次运行的输入、状态和产物
 ```
