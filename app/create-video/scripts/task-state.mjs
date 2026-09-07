@@ -62,9 +62,24 @@ export const updateTaskState = async (file, state, patch = {}) => {
   return next;
 };
 
+const SENSITIVE_FIELD = /(?:api[-_]?key|access[-_]?token|token|secret|password|authorization|cookie|credential|private[-_]?key)/i;
+const secretValues = () => Object.values(process.env).filter((value) => typeof value === 'string' && value.length >= 8);
+const scrubSecrets = (value) => {
+  if (typeof value !== 'string') return value;
+  return secretValues().reduce((result, secret) => result.replaceAll(secret, '[REDACTED]'), value);
+};
+const sanitizeEventDetails = (value, key = '') => {
+  if (SENSITIVE_FIELD.test(key)) return '[REDACTED]';
+  if (Array.isArray(value)) return value.map((item) => sanitizeEventDetails(item));
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([childKey, childValue]) => [childKey, sanitizeEventDetails(childValue, childKey)]));
+  }
+  return scrubSecrets(value);
+};
+
 export const appendEvent = async (file, event, details = {}) => {
   await fs.mkdir(path.dirname(file), { recursive: true });
-  const record = { timestamp: now(), event, ...details };
+  const record = { timestamp: now(), event, ...sanitizeEventDetails(details) };
   await fs.appendFile(file, `${JSON.stringify(record)}\n`, 'utf8');
   return record;
 };
