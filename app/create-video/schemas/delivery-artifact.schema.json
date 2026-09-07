@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"delivery-artifact.schema.json","allOf":[{"$ref":"artifact-envelope.schema.json"},{"type":"object","properties":{"artifactType":{"const":"delivery"},"mimeType":{"const":"video/mp4"},"sourceSha256":{"type":"string","pattern":"^[a-f0-9]{64}$"}}}]}

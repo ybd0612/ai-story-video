@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"audio-artifact.schema.json","allOf":[{"$ref":"artifact-envelope.schema.json"},{"type":"object","properties":{"artifactType":{"const":"audio"},"sceneId":{"type":"string","minLength":1},"mimeType":{"const":"audio/mpeg"},"durationSeconds":{"type":"number","exclusiveMinimum":0}}}]}

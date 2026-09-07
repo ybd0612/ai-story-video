@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"image-artifact.schema.json","allOf":[{"$ref":"artifact-envelope.schema.json"},{"type":"object","properties":{"artifactType":{"const":"image"},"sceneId":{"type":"string","minLength":1},"mimeType":{"const":"image/png"}}}]}

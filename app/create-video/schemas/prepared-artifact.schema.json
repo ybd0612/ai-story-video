@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"prepared-artifact.schema.json","allOf":[{"$ref":"artifact-envelope.schema.json"},{"type":"object","properties":{"artifactType":{"const":"prepared"},"storyPath":{"type":"string","minLength":1},"sceneCount":{"type":"integer","minimum":1}}}]}
