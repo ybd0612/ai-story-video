@@ -38,7 +38,8 @@ export async function executePipeline({ source, jobId: requestedJobId = null, re
       if (state.status === 'delivered') throw new Error('已交付任务拒绝 resume');
       const snapshot = await readSnapshotManifest(paths);
       await verifySnapshotImmutable({ paths, storyHash: snapshot.storyHash, approvalHash: snapshot.approvalHash });
-      await readMetadataManifest(paths);
+      const metadataManifest = await readMetadataManifest(paths);
+      if (state.metadataManifest && JSON.stringify(state.metadataManifest) !== JSON.stringify(metadataManifest)) throw new Error('job status metadata manifest mismatch, refuse resume');
       sourceStory = JSON.parse(await fs.readFile(paths.inputStory, 'utf8'));
       if (state.storyFingerprint !== fingerprint(sourceStory)) throw new Error('job input 故事指纹不匹配，请创建新 job');
       if (sceneId && !sourceStory.scenes?.some((scene) => String(scene.id) === String(sceneId))) throw new Error(`无效 SCENE_ID：${sceneId}`);

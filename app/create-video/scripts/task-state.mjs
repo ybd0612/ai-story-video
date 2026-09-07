@@ -17,12 +17,12 @@ export const STAGE_ORDER = ['validate', 'images', 'tts', 'audio-validation', 'pr
 const now = () => new Date().toISOString();
 const errorMessage = (error) => error instanceof Error ? error.message : String(error);
 
-export const createTaskState = ({ jobId, source, storyFingerprint }) => {
+export const createTaskState = ({ jobId, source, storyFingerprint, metadataManifest = null }) => {
   const timestamp = now();
   return {
     schemaVersion: SCHEMA_VERSION, jobId, source, storyFingerprint, status: 'created', currentStage: null,
     retryableStage: null, nextStage: 'validate', lastError: null, createdAt: timestamp, updatedAt: timestamp,
-    stages: {}, scenes: {}, migrationHistory: [],
+    stages: {}, scenes: {}, migrationHistory: [], metadataManifest,
   };
 };
 

@@ -22,4 +22,18 @@ export const createMetadataManifest = async ({ paths, projectRoot }) => {
   return manifest;
 };
 
-export const readMetadataManifest = async (paths) => JSON.parse(await fs.readFile(path.join(paths.input, 'metadata.manifest.json'), 'utf8'));
+export const readMetadataManifest = async (paths) => {
+  const manifest = JSON.parse(await fs.readFile(path.join(paths.input, 'metadata.manifest.json'), 'utf8'));
+  const refs = [
+    ['workflow', paths.workflowRef],
+    ['profile', paths.profileRef],
+    ['catalog', paths.catalogRef],
+  ];
+  for (const [name, file] of refs) {
+    const expected = manifest[name]?.sha256;
+    if (!expected) throw new Error(`Missing ${name} reference hash`);
+    const actual = await hash(file);
+    if (actual !== expected) throw new Error(`固化 ${name} 引用已被修改，拒绝 resume`);
+  }
+  return manifest;
+};
