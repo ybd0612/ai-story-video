@@ -12,6 +12,7 @@ test('context selection always loads profile and preferences', async () => {
   await fs.writeFile(path.join(root, 'knowledge.json'), '{}');
   const result = await selectContexts({ root, requested: ['knowledge'], mode: 'new' });
   assert.deepEqual(result.selected.map((item) => item.name), ['profile', 'preferences', 'knowledge']);
+  assert.deepEqual(result.records.map((item) => item.canonicalPath), ['profile.json', 'preferences.json', 'knowledge.json']);
   await fs.rm(root, { recursive: true, force: true });
 });
 

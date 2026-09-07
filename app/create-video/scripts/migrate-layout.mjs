@@ -58,9 +58,21 @@ export const check = async () => {
   return true;
 };
 
+export const checkCatalogHashes = async () => {
+  const catalogPath = path.join(PROJECT_ROOT, 'templates/catalog.json');
+  const catalog = JSON.parse(await fs.readFile(catalogPath, 'utf8'));
+  const errors = [];
+  for (const entry of [...(catalog.templates ?? []), ...(catalog.workflows ?? []), ...(catalog.profiles ?? [])]) {
+    const target = path.join(PROJECT_ROOT, entry.path);
+    try { await fileInfo(target); } catch { errors.push(`catalog path missing: ${entry.path}`); }
+  }
+  if (errors.length) throw new Error(`Catalog consistency failed: ${errors.join('; ')}`);
+  return true;
+};
+
 const command = process.argv[2] ?? 'mirror';
 try {
   if (command === 'mirror') { await mirror(); console.log('Layout mirror complete'); }
-  else if (command === '--check' || command === 'check') { await check(); console.log('Layout check passed'); }
+  else if (command === '--check' || command === 'check') { await check(); await checkCatalogHashes(); console.log('Layout check passed'); }
   else throw new Error(`Unknown command: ${command}`);
 } catch (error) { console.error(error.message); process.exitCode = 1; }

@@ -30,5 +30,6 @@ export const selectContexts = async ({ root, mode = 'new', requested = [], exten
     if (await exists(file)) selected.push({ name, path: file, required: DEFAULT_CONTEXTS.includes(name) });
     else if (DEFAULT_CONTEXTS.includes(name)) throw new Error(`Required context missing: ${name}`);
   }
-  return { mode, selected };
+  const records = selected.map(({ name, path: selectedPath, required }) => ({ name, canonicalPath: path.relative(path.resolve(root), selectedPath).replaceAll('\\\\', '/'), required }));
+  return { mode, selected, records };
 };
