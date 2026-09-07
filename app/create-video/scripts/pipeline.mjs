@@ -6,6 +6,7 @@ import { createJobId, getJobPaths, OUTPUTS_ROOT } from './job-paths.mjs';
 import { createTaskState, readTaskState, runStage, updateTaskState, markInterrupted, appendEvent, STAGE_ORDER } from './task-state.mjs';
 import { stageIsComplete, validateDeliverContract } from './stage-contracts.mjs';
 import { createSnapshot, readSnapshotManifest, verifySnapshotImmutable } from './task-snapshot.mjs';
+import { createMetadataManifest, readMetadataManifest } from './metadata-manifest.mjs';
 
 const run = (command, args, env = {}) => new Promise((resolve, reject) => {
   const child = spawn(command, args, { stdio: 'inherit', shell: false, env: { ...process.env, ...env }, cwd: process.cwd() });
@@ -37,6 +38,7 @@ export async function executePipeline({ source, jobId: requestedJobId = null, re
       if (state.status === 'delivered') throw new Error('已交付任务拒绝 resume');
       const snapshot = await readSnapshotManifest(paths);
       await verifySnapshotImmutable({ paths, storyHash: snapshot.storyHash, approvalHash: snapshot.approvalHash });
+      await readMetadataManifest(paths);
       sourceStory = JSON.parse(await fs.readFile(paths.inputStory, 'utf8'));
       if (state.storyFingerprint !== fingerprint(sourceStory)) throw new Error('job input 故事指纹不匹配，请创建新 job');
       if (sceneId && !sourceStory.scenes?.some((scene) => String(scene.id) === String(sceneId))) throw new Error(`无效 SCENE_ID：${sceneId}`);
@@ -45,7 +47,8 @@ export async function executePipeline({ source, jobId: requestedJobId = null, re
       for (const directory of [paths.input, paths.work, paths.images, paths.audio, paths.output]) await fs.mkdir(directory, { recursive: true });
       const approvalSource = process.env.STORY_APPROVAL_FILE ? path.resolve(process.env.STORY_APPROVAL_FILE) : path.join(path.dirname(sourcePath), 'story.approved');
       await createSnapshot({ paths, sourcePath, approvalPath: approvalSource, storyFingerprint: currentFingerprint });
-      state = await updateTaskState(stateFile, createTaskState({ jobId, source: paths.inputStory, storyFingerprint: currentFingerprint }));
+      const metadataManifest = await createMetadataManifest({ paths, projectRoot: path.resolve(process.cwd(), '../..') });
+      state = await updateTaskState(stateFile, createTaskState({ jobId, source: paths.inputStory, storyFingerprint: currentFingerprint, metadataManifest }));
       await appendEvent(eventsFile, 'job_created', { jobId });
     }
     const approvalFile = paths.inputApproval;
@@ -77,7 +80,8 @@ export async function executePipeline({ source, jobId: requestedJobId = null, re
     }
     state = await updateTaskState(stateFile, await readTaskState(stateFile), { status: 'delivered', currentStage: null, retryableStage: null, output: delivered });
     await appendEvent(eventsFile, 'job_delivered', { jobId, output: delivered });
-    await fs.writeFile(paths.metadata, `${JSON.stringify({ jobId, source: sourcePath, output: delivered, createdAt: new Date().toISOString() }, null, 2)}\n`);
+    const metadataManifest = await readMetadataManifest(paths);
+    await fs.writeFile(paths.metadata, `${JSON.stringify({ jobId, source: paths.inputStory, output: delivered, metadataManifest, createdAt: new Date().toISOString() }, null, 2)}\n`);
     return state;
   } finally { await fs.rm(lockFile, { force: true }); }
 }
