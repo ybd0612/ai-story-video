@@ -14,7 +14,7 @@
     "doctor": "node scripts/doctor.mjs",
     "dry-run": "node scripts/dry-run.mjs",
     "prepare:story": "node scripts/prepare-story.mjs",
-    "test": "node --test test/story-pipeline.test.mjs test/story-validation.test.mjs",
+    "test": "node --test test/*.test.mjs",
     "render:video": "node scripts/render-video.mjs",
     "make:video": "node scripts/make-video.mjs",
     "upgrade": "npx remotion upgrade"

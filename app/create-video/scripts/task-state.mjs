@@ -1,54 +1,77 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-export const createTaskState = ({ jobId, source, storyFingerprint }) => ({
-  jobId,
-  source,
-  storyFingerprint,
-  status: 'created',
-  currentStage: null,
-  retryableStage: null,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  stages: {},
-});
+export const SCHEMA_VERSION = 2;
+export const STAGE_ORDER = ['validate', 'images', 'tts', 'audio-validation', 'prepare', 'render', 'deliver'];
+
+const now = () => new Date().toISOString();
+const errorMessage = (error) => error instanceof Error ? error.message : String(error);
+
+export const createTaskState = ({ jobId, source, storyFingerprint }) => {
+  const timestamp = now();
+  return {
+    schemaVersion: SCHEMA_VERSION, jobId, source, storyFingerprint, status: 'created', currentStage: null,
+    retryableStage: null, nextStage: 'validate', lastError: null, createdAt: timestamp, updatedAt: timestamp,
+    stages: {}, scenes: {},
+  };
+};
+
+export const readTaskState = async (file) => {
+  const state = JSON.parse(await fs.readFile(file, 'utf8'));
+  if (state.schemaVersion !== SCHEMA_VERSION) throw new Error(`Unsupported task state schema: ${state.schemaVersion}`);
+  return state;
+};
+
+const atomicWrite = async (file, value) => {
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  const temporary = `${file}.${process.pid}.${Date.now()}.tmp`;
+  await fs.writeFile(temporary, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+  await fs.rename(temporary, file);
+};
 
 export const updateTaskState = async (file, state, patch = {}) => {
-  const next = {
-    ...state,
-    ...patch,
-    updatedAt: new Date().toISOString(),
-  };
-  await fs.mkdir(path.dirname(file), { recursive: true });
-  await fs.writeFile(file, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
+  let latest = state;
+  try { latest = await readTaskState(file); } catch { /* initial write */ }
+  const next = { ...latest, ...patch, updatedAt: now() };
+  await atomicWrite(file, next);
   return next;
 };
 
-export const runStage = async (file, state, name, action) => {
-  const startedAt = new Date().toISOString();
-  let next = await updateTaskState(file, state, {
-    status: 'running',
-    currentStage: name,
-    retryableStage: name,
-    stages: { ...state.stages, [name]: { status: 'running', startedAt } },
+export const updateSceneState = async (file, sceneId, kind, patch) => {
+  const state = await readTaskState(file);
+  const existing = state.scenes?.[sceneId] ?? {};
+  const scenes = { ...state.scenes, [sceneId]: { ...existing, [kind]: { ...(existing[kind] ?? {}), ...patch, updatedAt: now() } } };
+  return updateTaskState(file, state, { scenes });
+};
+
+export const markInterrupted = async (file) => {
+  const state = await readTaskState(file);
+  const running = Object.entries(state.stages).find(([, stage]) => stage.status === 'running');
+  if (!running) return state;
+  const [name, stage] = running;
+  return updateTaskState(file, state, {
+    status: 'failed', currentStage: name, retryableStage: name,
+    lastError: { code: 'INTERRUPTED', message: 'Stage interrupted before completion' },
+    stages: { ...state.stages, [name]: { ...stage, status: 'failed', error: 'INTERRUPTED', finishedAt: now() } },
   });
+};
+
+export const runStage = async (file, state, name, action, options = {}) => {
+  if (!STAGE_ORDER.includes(name)) throw new Error(`Unknown stage: ${name}`);
+  const latest = await readTaskState(file).catch(() => state);
+  const previous = latest.stages?.[name] ?? { status: 'pending', attempts: 0 };
+  const startedAt = now();
+  const runningStage = { ...previous, status: 'running', attempts: (previous.attempts ?? 0) + 1, startedAt, error: null };
+  let next = await updateTaskState(file, latest, { status: 'running', currentStage: name, retryableStage: name, lastError: null, stages: { ...latest.stages, [name]: runningStage } });
   try {
     await action();
-    next = await updateTaskState(file, next, {
-      status: 'running',
-      currentStage: null,
-      stages: { ...next.stages, [name]: { status: 'completed', startedAt, finishedAt: new Date().toISOString() } },
-    });
+    const completed = { ...runningStage, status: 'completed', finishedAt: now(), error: null };
+    next = await updateTaskState(file, next, { status: 'running', currentStage: null, nextStage: STAGE_ORDER[STAGE_ORDER.indexOf(name) + 1] ?? null, stages: { ...next.stages, [name]: completed } });
     return next;
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    await updateTaskState(file, next, {
-      status: 'failed',
-      currentStage: name,
-      error: message,
-      failedAt: new Date().toISOString(),
-      stages: { ...next.stages, [name]: { status: 'failed', startedAt, failedAt: new Date().toISOString(), error: message } },
-    });
+    const message = errorMessage(error);
+    const failed = { ...runningStage, status: 'failed', finishedAt: now(), error: message };
+    await updateTaskState(file, next, { status: 'failed', currentStage: name, retryableStage: name, lastError: { code: 'STAGE_FAILED', message }, stages: { ...next.stages, [name]: failed } });
     throw error;
   }
 };

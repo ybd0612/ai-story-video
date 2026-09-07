@@ -74,6 +74,13 @@ const buildPrompt = (scene) => [
 ].join('\n');
 
 for (const [index, scene] of story.scenes.entries()) {
+  if (process.env.TARGET_SCENE_ID && String(scene.id) !== String(process.env.TARGET_SCENE_ID)) {
+    const imagePath = path.join(imageDir, `${String(index + 1).padStart(2, '0')}-${scene.id}.png`);
+    const existing = await fs.access(imagePath).then(() => true).catch(() => false);
+    if (!existing) throw new Error(`目标镜头补偿时发现缺失图片：${scene.id}`);
+    scenes.push({ ...scene, imagePath: path.relative(PUBLIC_ROOT, imagePath).replaceAll('\\\\', '/') });
+    continue;
+  }
   const imagePath = path.join(imageDir, `${String(index + 1).padStart(2, '0')}-${scene.id}.png`);
   const existing = await fs.access(imagePath).then(() => true).catch(() => false);
 

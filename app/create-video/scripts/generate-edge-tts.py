@@ -46,6 +46,13 @@ async def main():
     for index, scene in enumerate(scenes, start=1):
         filename = f"{index:02d}-{scene['id']}.mp3"
         output_path = AUDIO_DIR / filename
+        target_scene = os.environ.get("TARGET_SCENE_ID")
+        if target_scene and str(scene.get("id")) != target_scene:
+            if not output_path.exists():
+                raise ValueError(f"目标镜头补偿时发现缺失音频：{scene['id']}")
+            audio_duration = get_audio_duration(output_path)
+            updated.append({**scene, "audioDurationInSeconds": round(audio_duration, 3), "audioPath": (Path("media") / "audio" / filename).as_posix()})
+            continue
         communicate = edge_tts.Communicate(
             scene["narration"],
             VOICE,
