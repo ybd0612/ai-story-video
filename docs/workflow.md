@@ -5,7 +5,8 @@
 ## 任务生命周期
 
 ```text
-读取 data/
+读取 data/context/profile + data/context/preferences + templates/workflows/story/platform
+  → 按任务选择 data/knowledge、data/feedback、data/analytics
   → 准备故事输入
   → 用户确认
   → 创建 jobs/<job-id>/
@@ -15,7 +16,7 @@
   → 准备当前故事
   → Remotion 渲染
   → 复制最终视频到 outputs/<job-id>/
-  → 记录任务和用户反馈到 data/
+  → 记录任务和用户反馈到 data/operations、data/feedback
 ```
 
 ## 代码入口
@@ -29,4 +30,4 @@ npm run make:video
 
 ## 用户反馈
 
-用户对标题、人物、镜头、旁白、节奏或成片的调整意见，必须追加到 `data/feedback/` 或相应用户数据文件。下一次生成前先读取这些内容，不直接修改历史任务文件。
+用户对标题、人物、镜头、旁白、节奏或成片的调整意见，必须追加到 `data/feedback/` 或相应新目录文件。下一次生成按任务选择读取这些内容，不直接修改历史任务文件。旧 `data/*.md` 仅只读兼容。

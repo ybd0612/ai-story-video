@@ -7,19 +7,19 @@
 ## 目录原则
 
 ```text
-app/create-video/  固定代码路径：Remotion、脚本和运行配置
- data/              用户隐私路径：资料、偏好、反馈、历史记录
+ app/create-video/  固定代码路径：Remotion、脚本和运行配置
+ data/              用户隐私路径：context、knowledge、feedback、analytics、operations；旧根文件只读兼容
  jobs/              每次生成的完整任务目录，按时间戳隔离
  outputs/           最终交付文件汇总，按任务隔离
  docs/              结构化项目文档
- templates/         可复用创作模板
+ templates/         分类可复用创作模板（workflows/story/style/voice/platform/policy）
 ```
 
 `data/`、`.claude/`、`.neuralmemory/`、`.workbuddy/`、`jobs/` 和 `outputs/` 均不会提交到 Git。
 
 ## 标准生成流程
 
-1. Agent 读取 `data/` 下的用户资料、偏好、知识和历史反馈。
+1. Agent 默认读取 `data/context/profile.md`、`data/context/preferences.md`，按任务选择 `data/knowledge/`、`data/feedback/`、`data/analytics/`；`data/operations/` 仅维护和复盘时读取。
 2. 生成或接收故事 JSON，并等待用户确认。
 3. 每次运行创建 `jobs/<时间戳>-<任务名>/`。
 4. 图片、音频、JSON 中间文件和视频全部写入本次任务目录。

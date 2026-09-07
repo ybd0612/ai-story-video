@@ -16,7 +16,7 @@
 
 > **项目级生成入口硬规则：** 在 `dsp` 项目下生成视频，必须优先使用本项目 `create-video` 的故事视频流水线（Agnes 配图 → Edge TTS → Remotion），不得默认调用 WorkBuddy 内置视频生成能力。只有用户明确指定外部/内置生成能力时，才允许切换，并需说明会绕过本项目流程。
 
-1. 每次生成前先读取 `data/profile.md`、`data/preferences.md`、`data/knowledge.md`、`data/history.md`、`data/feedback/` 和 `templates/`，理解用户最新定位、反馈与创作风格。
+1. 每次生成前必读 `data/context/profile.md`、`data/context/preferences.md`、`templates/workflows/`、`templates/story/`、`templates/platform/`；按任务选择 `data/knowledge/`、`data/feedback/`、`data/analytics/`。`data/operations/` 仅维护/复盘时读取。旧 `data/*.md` 与 templates 根 title/script 仅只读兼容，不再新增。
 2. 将主题整理为符合 `create-video/story.schema.json` 的结构化 JSON，不要让视频组件直接解析自然语言。
 3. 每个故事必须建立 `character` 角色圣经，固定人物描述、外貌特征和服装；可提供 `referenceImage`。
 4. 每个镜头只描述一个动作或情绪变化，图片提示词不要求图片生成文字。

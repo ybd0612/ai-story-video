@@ -7,11 +7,11 @@
 | 路径 | 职责 | Git 状态 |
 |---|---|---|
 | `app/create-video/` | 唯一固定代码路径，Remotion 与生成脚本 | 提交 |
-| `data/` | 用户资料、偏好、知识、历史、Agent 反馈 | 忽略 |
+| `data/` | 用户运行时上下文；权威子目录为 `context/`、`knowledge/`、`analytics/`、`operations/`、`feedback/` | 忽略 |
 | `jobs/<job-id>/` | 单次生成的输入、中间文件、媒体和视频 | 忽略 |
 | `outputs/<job-id>/` | 单次生成的最终交付物 | 忽略 |
 | `docs/` | 项目架构、工作流、隐私和维护文档 | 提交 |
-| `templates/` | 标题、脚本等可复用模板 | 提交 |
+| `templates/` | 按 `workflows/`、`story/`、`style/`、`voice/`、`platform/`、`policy/` 分类的可复用模板 | 提交 |
 | `.claude/` | 本地 Agent 规则和技能 | 忽略 |
 | `.neuralmemory/` | 本地记忆数据 | 忽略 |
 | `.workbuddy/` | WorkBuddy 项目状态和记忆 | 忽略 |
@@ -21,7 +21,7 @@
 | 事实 | 权威值 |
 |---|---|
 | 代码根目录 | `app/create-video/` |
-| 用户数据根目录 | `data/`，不提交 Git |
+| 用户数据根目录 | `data/context/`、`data/knowledge/`、`data/feedback/`、`data/analytics/`、`data/operations/`；旧根文件只读兼容 |
 | 任务目录 | `jobs/<时间戳>-<任务名>/` |
 | 最终输出目录 | `outputs/<任务 ID>/` |
 | 图片和音频 | 当前任务的 `jobs/<任务 ID>/media/` |
@@ -38,7 +38,7 @@
 ## 3. 标准数据流
 
 ```text
-data/ 用户资料与历史反馈
+data/context + data/knowledge + data/feedback + data/analytics 用户上下文、知识与反馈（按需加载）
         ↓
 Agent 生成/调整故事
         ↓
