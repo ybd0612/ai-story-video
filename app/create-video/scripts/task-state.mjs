@@ -8,7 +8,7 @@ const errorMessage = (error) => error instanceof Error ? error.message : String(
 
 export const createTaskState = ({ jobId, source, storyFingerprint }) => {
   const timestamp = now();
-  return { schemaVersion: SCHEMA_VERSION, jobId, source, storyFingerprint, status: 'created', currentStage: null, retryableStage: null, nextStage: 'validate', lastError: null, createdAt: timestamp, updatedAt: timestamp, stages: {}, scenes: {} };
+  return { schemaVersion: SCHEMA_VERSION, jobId, source, storyFingerprint, status: 'created', currentStage: null, retryableStage: null, nextStage: 'validate', lastError: null, createdAt: timestamp, updatedAt: timestamp, stages: {}, scenes: {}, migrationHistory: [] };
 };
 
 const migrateV1 = (legacy) => ({
@@ -23,6 +23,7 @@ const migrateV1 = (legacy) => ({
   lastError: legacy.lastError ?? (legacy.error ? { code: 'LEGACY_ERROR', message: legacy.error } : null),
   createdAt: legacy.createdAt ?? now(), updatedAt: now(),
   stages: legacy.stages ?? {}, scenes: legacy.scenes ?? {},
+  migrationHistory: [...(legacy.migrationHistory ?? []), { from: 1, to: SCHEMA_VERSION, migratedAt: now() }],
 });
 
 export const readTaskState = async (file) => {
@@ -35,10 +36,13 @@ export const readTaskState = async (file) => {
     throw error;
   }
   const backup = `${file}.v1.bak`;
+  const eventsFile = path.join(path.dirname(file), 'events.jsonl');
   try {
     await fs.writeFile(backup, raw, { flag: 'wx' }).catch(async (error) => { if (error.code !== 'EEXIST') throw error; });
+    await appendEvent(eventsFile, 'migration_started', { from: state.schemaVersion ?? 1, to: SCHEMA_VERSION });
     const migrated = migrateV1(state);
     await atomicWrite(file, migrated);
+    await appendEvent(eventsFile, 'migration_completed', { from: state.schemaVersion ?? 1, to: SCHEMA_VERSION });
     return migrated;
   } catch (error) {
     const wrapped = new Error(`Task state migration failed: ${errorMessage(error)}`);
