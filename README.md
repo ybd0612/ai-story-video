@@ -55,6 +55,7 @@ outputs/20260902-122542-moon-rabbit-goodnight/story-video.mp4
 - [项目总纲](PROJECT_INDEX.md)：目录、SSOT、同步规则和状态
 - [架构说明](docs/architecture.md)：代码、数据、任务、输出边界
 - [生成工作流](docs/workflow.md)：从用户反馈到成片的完整流程
+- [工作流演进方案](docs/workflow-roadmap-openmontage.md)：DSP 与 OpenMontage 对比、P0/P1 待做项
 - [数据与隐私](docs/data-and-privacy.md)：忽略规则和隐私边界
 - [维护指南](docs/maintenance.md)：新增功能和排查问题
 - [视频代码说明](app/create-video/README.md)

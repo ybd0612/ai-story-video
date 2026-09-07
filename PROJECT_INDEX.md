@@ -64,6 +64,7 @@ data/ 记录用户反馈和任务摘要
 | `CLAUDE.md` | Agent 行为规则 |
 | `docs/architecture.md` | 分层架构和目录边界 |
 | `docs/workflow.md` | 单次任务生成流程 |
+| `docs/workflow-roadmap-openmontage.md` | DSP 与 OpenMontage 对比、P0/P1 待做方案 |
 | `docs/data-and-privacy.md` | 用户数据和 Git 隐私规则 |
 | `docs/maintenance.md` | 维护、扩展和排查 |
 | `app/create-video/README.md` | 视频子项目说明 |
@@ -72,6 +73,7 @@ data/ 记录用户反馈和任务摘要
 ## 5. 同步铁律
 
 - 路径或生成行为变更：先改本文件，再同步 `README.md`、`CLAUDE.md` 和 `docs/`。
+- 工作流方案和实施状态变更：同步 `README.md`、本总纲文档和 `docs/workflow-roadmap-openmontage.md`。
 - 每次生成必须创建新的 `job-id`，禁止覆盖历史任务。
 - 用户反馈必须进入 `data/`，后续生成必须读取相关数据。
 - API Key、用户资料、生成媒体和视频不进入 Git。
