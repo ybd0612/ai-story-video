@@ -66,6 +66,7 @@ data/ 记录用户反馈和任务摘要
 | `docs/workflow.md` | 单次任务生成流程 |
 | `docs/workflow-roadmap-openmontage.md` | DSP 与 OpenMontage 对比、P0/P1 实施方案与结果 |
 | `docs/enterprise-roadmap.md` | 企业级稳定、复用、定制和治理路线图 |
+| `docs/data-template-boundary.md` | data、templates、jobs 的分层边界方案 |
 | `docs/data-and-privacy.md` | 用户数据和 Git 隐私规则 |
 | `docs/maintenance.md` | 维护、扩展和排查 |
 | `app/create-video/README.md` | 视频子项目说明 |

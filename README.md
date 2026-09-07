@@ -57,6 +57,7 @@ outputs/20260902-122542-moon-rabbit-goodnight/story-video.mp4
 - [生成工作流](docs/workflow.md)：从用户反馈到成片的完整流程
 - [工作流演进方案](docs/workflow-roadmap-openmontage.md)：DSP 与 OpenMontage 对比、P0/P1 待做项
 - [企业级演进路线图](docs/enterprise-roadmap.md)：稳定性、复用、定制和治理方向
+- [data 与 templates 边界方案](docs/data-template-boundary.md)：运行时上下文、模板和任务目录分层
 - [数据与隐私](docs/data-and-privacy.md)：忽略规则和隐私边界
 - [维护指南](docs/maintenance.md)：新增功能和排查问题
 - [视频代码说明](app/create-video/README.md)
