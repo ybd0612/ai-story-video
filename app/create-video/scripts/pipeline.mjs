@@ -64,7 +64,7 @@ export async function executePipeline({ source, jobId: requestedJobId = null, re
     };
     const commands = {
       validate: [process.execPath, ['scripts/validate-story.mjs', jobSource], {}], images: [process.execPath, ['scripts/generate-story-images.mjs'], { STORY_FILE: jobSource, STORY_OUTPUT: withImages, STORY_IMAGE_DIR: paths.images, STORY_PUBLIC_ROOT: paths.root }],
-      tts: [process.env.PYTHON_BIN ?? 'python', ['scripts/generate-edge-tts.py'], { STORY_FILE: withImages, STORY_OUTPUT: withAudio, STORY_AUDIO_DIR: paths.audio, STORY_PUBLIC_ROOT: paths.root }],
+      tts: [process.env.PYTHON_BIN ?? 'C:/Users/ybd06/.workbuddy/binaries/python/envs/default/Scripts/python.exe', ['scripts/generate-edge-tts.py'], { STORY_FILE: withImages, STORY_OUTPUT: withAudio, STORY_AUDIO_DIR: paths.audio, STORY_PUBLIC_ROOT: paths.root }],
       'audio-validation': [process.execPath, ['scripts/validate-audio-duration.mjs', withAudio], { STORY_FILE: withAudio, STORY_PUBLIC_ROOT: paths.root }], prepare: [process.execPath, ['scripts/prepare-story.mjs'], { STORY_SOURCE: withAudio, STORY_TARGET: currentStory }], render: [process.execPath, ['scripts/render-video.mjs'], { STORY_CURRENT_FILE: currentStory, VIDEO_OUTPUT: videoOutput, JOB_PUBLIC_ROOT: paths.root }],
     };
     let startIndex = retryStage ? STAGE_ORDER.indexOf(retryStage) : 0;
