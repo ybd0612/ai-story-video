@@ -8,16 +8,16 @@
 
 ```text
  app/create-video/  固定代码路径：Remotion、脚本和运行配置
- data/              用户隐私路径：根文件为镜像主源，context、knowledge、analytics、operations、feedback 为分类副本；memory/ 为项目创作规则
+ data/              用户隐私路径：context、knowledge、analytics、operations、feedback 为写入主源；根下同名 md 为兼容副本；memory/ 为项目创作规则
  jobs/              每次生成的完整任务目录，按时间戳隔离
  outputs/           最终交付文件汇总，按任务隔离
  docs/              结构化项目文档
  templates/         可复用创作模板（workflows、style、voice、platform、policy 与根 title/script）
 ```
 
-`data/context/`、`data/knowledge/`、`data/feedback/`、`data/analytics/`、`data/operations/`、`templates/story/`、`.claude/`、`.neuralmemory/`、`.workbuddy/`、`jobs/` 和 `outputs/` 均不会提交到 Git；`data/memory/` 仅提交 DSP 自身的结构化创作规则。
+`data/context/`、`data/knowledge/`、`data/feedback/`、`data/analytics/`、`data/operations/`、`data/` 根文件、`templates/story/`、`.claude/`、`.neuralmemory/`、`.workbuddy/`、`jobs/` 和 `outputs/` 均不会提交到 Git；`data/memory/` 仅提交 DSP 自身的结构化创作规则。
 
-读写口径见 [项目总纲](PROJECT_INDEX.md) §2.5：更新 `data/` 或根模板内容只写主源，随后执行 `node scripts/migrate-layout.mjs mirror` 生成镜像；单独编辑分类目录副本会让一致性校验失败。
+读写口径见 [项目总纲](PROJECT_INDEX.md) §2.5：`data/` 只写分类目录主源，`templates/` 只写根模板主源，写完统一执行 `node scripts/migrate-layout.mjs mirror` 生成副本；直接编辑副本会让一致性校验失败。
 
 ## 标准生成流程
 
@@ -26,7 +26,7 @@
 3. 每次运行创建 `jobs/<时间戳>-<任务名>/`。
 4. 图片、音频、JSON 中间文件和视频全部写入本次任务目录。
 5. 最终视频复制到 `outputs/<任务 ID>/`，不会覆盖其他任务。
-6. 用户对脚本或成片的反馈追加记录到 `data/` 主源文件，供后续生成读取；写完后执行 `node scripts/migrate-layout.mjs mirror` 同步分类目录镜像。
+6. 用户对脚本或成片的反馈与任务记录追加到 `data/` 分类目录主源（`feedback/`、`operations/`、`analytics/`、`context/`），供后续生成读取；写完后执行 `node scripts/migrate-layout.mjs mirror` 同步 `data/` 根下的兼容副本。
 
 ## 运行
 

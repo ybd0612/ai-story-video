@@ -2,7 +2,7 @@
 
 > 本文档隶属 [DSP 项目总纲](../PROJECT_INDEX.md)，关键路径和当前实现状态以总纲 SSOT 为准。
 >
-> 文档性质：数据与模板分层及迁移状态说明。A/B/C 已完成；D 阶段完成的是**读取路径**切换到分类目录，**写入主源仍是 `data/` 与 `templates/` 根文件**（由 `scripts/migrate-layout.mjs` 的 `MAPPINGS` 固定，分类副本必须与主源字节一致）。生成代码默认链路保持兼容。落地口径以 [`PROJECT_INDEX.md` §2.5](../PROJECT_INDEX.md) 为准。
+> 文档性质：数据与模板分层及迁移状态说明。A/B/C 已完成；**D 阶段已按本方案原设想落地**——`data/` 分类目录（`context/`、`knowledge/`、`analytics/`、`operations/`）是写入主源，`data/` 根文件降级为 `mirror` 生成的兼容副本（2026-09-21）。唯一保留的差异是 `templates/`：根 `title/script` 模板仍是主源，`templates/story/` 是镜像副本（`catalog.json` 与 `.gitignore` 按根路径钉死）。权威映射表以 [`PROJECT_INDEX.md` §2.5](../PROJECT_INDEX.md) 为准。
 
 ## 1. 结论
 
@@ -39,9 +39,9 @@ data = 谁在创作、有什么资料、过去发生了什么
 | `data/tasks.md` | AI 任务日志、历史项目维护记录 | `data/operations/` 或 Git 变更记录 | 不应作为每次创作的主要上下文 |
 | `data/feedback/` | 用户对标题、人物、镜头、旁白、成片的反馈 | `data/feedback/` | 保留，但建议一条反馈一个结构化文件 |
 
-B 阶段已建立兼容镜像（`migrate-layout.mjs mirror`），C 阶段提供 source/target 字节一致性与 catalog hash 校验（`--check`）；D 阶段把**读取**默认路径切到分类目录。但代码里的同步方向是固定的：表中「当前路径」是 `mirror` 的 **source（主源）**，「长期归属建议」列出的分类路径是 **target（镜像副本）**，副本必须与主源完全一致，`mirror` 遇到副本自行改动会直接抛 `Migration target differs` 而不是覆盖。
+B 阶段建立兼容镜像（`migrate-layout.mjs mirror`），C 阶段提供 source/target 字节一致性与 catalog hash 校验（`--check`）；D 阶段最初只切换了文档与 Agent 的**读取**路径，代码里的方向直到 2026-09-21 才按本方案原设想反转到位：**表中「长期归属建议」列出的分类路径现在是 `mirror` 的 source（主源），「当前路径」列出的根文件是 target（副本）**。`mirror` 在副本被手工改动时直接抛 `Migration target differs` 而不是覆盖，所以副本不可手改。
 
-因此落地口径为：**读取可任选分类路径，写入只写主源，写完跑 `mirror`**。旧根文件不删除、不作为第二套内容各自演化。生成代码默认链路不变。
+落地口径：**写入只写分类目录主源，写完跑 `mirror`**；`data/` 根文件保留只为兼容既有读取方，不删除、不作为第二套内容各自演化。`templates/` 半区方向相反（根 `title/script` 模板是主源，`templates/story/` 是副本），因为 `catalog.json` 按根路径钉 `sha256` 且 `.gitignore` 已排除该副本。生成代码默认链路不变。
 
 ## 3. 推荐目标目录
 
@@ -217,10 +217,10 @@ data/profile.md
 - `templates/` 内每类模板有版本号；
 - 每个 job 记录实际加载的上下文和模板版本。
 
-### 阶段 D：读取路径切换（已实施，写入方向与原设想不同）
+### 阶段 D：分类目录成为 `data/` 读写权威（`templates/` 例外）
 
 - 已落地：`CLAUDE.md`、`README.md`、`docs/workflow.md` 与 `AGENT_STORY_WORKFLOW.md` 的**读取**默认路径切到分类目录；`templates/catalog.json` 记录模板与 workflow/profile 的版本和 sha256；job 创建时把 workflow、platform profile 和 catalog 固化到 `input/refs/`。
-- **与原设想的差异**：代码没有把分类目录变成写入权威。`migrate-layout.mjs` 的 `MAPPINGS` 把根文件固定为 source、分类副本固定为必须字节一致的 target，`mirror` 在副本自行改动时直接抛 `Migration target differs`。因此写入仍统一走根主源，改完必须跑 `mirror`。
+- **与 `templates/` 半区的差异**：`data/` 已把分类目录变成写入权威，但 `templates/` 没有跟随反转——根 `title/script` 模板仍是主源，`templates/story/` 仍是副本。原因是 `templates/catalog.json` 按根路径钉 `sha256`、`.gitignore` 已把副本排除在版本库外，反转会连带改动 Git 跟踪范围与指纹固定，收益为零。这处非对称是有意决定，映射表以 `PROJECT_INDEX.md` §2.5 为准。
 - 未落地（原 C 阶段目标）：`templates/catalog.json` 只登记了 4 个条目（`title`、`script` 模板与 workflow、platform profile）并各自带 `version` 与 `sha256`，由 `checkCatalogHashes()` 校验；`style/`、`voice/`、`policy/` 三个分类仍是空占位（只有 `.gitkeep`），`story/` 只有镜像副本，因此「每类模板有版本号」只对已存在的文件成立。扩展名也与本方案设想不同：`story-video.yaml`、`douyin-vertical.yaml` 实际以 `.json` 实现。`data/knowledge/` 尚未拆成 `facts/ideas/resources`，`data/analytics/` 尚无 `publications.csv` 与 `insights.md`。
 - 权威口径统一收录在 `PROJECT_INDEX.md` §2.5，本文件不再各自陈述映射表。
 

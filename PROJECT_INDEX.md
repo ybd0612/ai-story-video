@@ -75,7 +75,7 @@ Git 当前跟踪 100 个文件（`git ls-files | wc -l`）；`data/` 与 `templa
 | Python 解析 | 统一由 `scripts/runtime-tools.mjs` 负责（`doctor.mjs`、`pipeline.mjs`、`run-edge-tts.mjs` 共用）。设置 `PYTHON_BIN` 时**只用它且不回退**，不可用即报 `PYTHON_BIN_UNUSABLE`；未设置时按 `VIRTUAL_ENV` 解释器 → `py -3`（Windows）→ `python` → `python3` 依次探测，且要求能成功 `import edge_tts`，全部失败报 `PYTHON_RUNTIME_NOT_FOUND`。探测超时 `PYTHON_PROBE_TIMEOUT_MS`，默认 15000 |
 | ffprobe 默认 | `FFPROBE_BIN`，缺省 `ffprobe`（依赖 PATH） |
 | 阶段顺序 | `validate → images → tts → audio-validation → prepare → render → deliver`（`task-state.mjs` `STAGE_ORDER`） |
-| 测试基线 | `npm test` 共 37 项；2026-09-21 实测 35 通过、2 失败，两个失败同源（`Migration target differs: data/operations/tasks.md`），见 §7 C-01 |
+| 测试基线 | `npm test` 共 36 项；2026-09-21 全部通过。此前记录的「37 项 / 2 失败」中第 37 项是 `migrate-layout.mjs` 在 import 时执行 `mirror()` 产生的伪失败，加守卫后消失 |
 
 ### 2.5 `data/` 与 `templates/` 镜像口径（易错，务必照此执行）
 
@@ -83,20 +83,25 @@ Git 当前跟踪 100 个文件（`git ls-files | wc -l`）；`data/` 与 `templa
 
 | 主源（写入这里） | 镜像副本（由 `mirror` 生成，禁止单独编辑） |
 |---|---|
-| `data/profile.md` | `data/context/profile.md` |
-| `data/preferences.md` | `data/context/preferences.md` |
-| `data/knowledge.md` | `data/knowledge/legacy.md` |
-| `data/history.md` | `data/analytics/history.md` |
-| `data/tasks.md` | `data/operations/tasks.md` |
+| `data/context/profile.md` | `data/profile.md` |
+| `data/context/preferences.md` | `data/preferences.md` |
+| `data/knowledge/legacy.md` | `data/knowledge.md` |
+| `data/analytics/history.md` | `data/history.md` |
+| `data/operations/tasks.md` | `data/tasks.md` |
 | `templates/title-template.md` | `templates/story/title-template.md` |
 | `templates/script-template.md` | `templates/story/script-template.md` |
 
+两个半区方向**刻意不同**：
+
+- **`data/`：分类目录是权威**（兑现 D 阶段原意图），`data/` 根文件是向后兼容副本；
+- **`templates/`：根文件是权威**，`templates/story/` 是副本——因为 `templates/catalog.json` 按根路径钉 `sha256`、`.gitignore` 已把 `story/` 副本排除在版本库外，反转会连带改动 Git 跟踪范围与指纹固定，收益为零。
+
 强制规则：
 
-1. 更新上述任一内容，**只写主源**；
-2. 写完立刻在 `app/create-video/` 执行 `node scripts/migrate-layout.mjs mirror` 重新生成镜像并刷新 `data/.migration/layout-map.json`；
-3. 只改镜像副本会触发 `Migration target differs` 并让 `node scripts/migrate-layout.mjs --check` 与 `npm test` 失败；
-4. 分类目录中的 `context/`、`knowledge/`、`analytics/`、`operations/` 路径仍是 Agent 读取上下文的推荐入口（内容等价，任选其一读取）；写入一律走主源。
+1. 更新上述任一内容，**只写该行的主源**；
+2. 写完立刻在 `app/create-video/` 执行 `node scripts/migrate-layout.mjs mirror` 重新生成副本并刷新 `data/.migration/layout-map.json`；
+3. 只改镜像副本会触发 `Migration target differs`，并让 `node scripts/migrate-layout.mjs --check` 与 `npm test` 失败；
+4. `data/feedback/` 不在映射内，可直接新增文件，无需 `mirror`。
 
 ### 2.6 单阶段命令的真实边界
 
@@ -127,7 +132,7 @@ render   jobs/<job-id>/output/story-video.mp4
         ↓
 deliver  outputs/<job-id>/story-video.mp4
         ↓
-反馈与记录写 data/ 主源，再执行 migrate-layout mirror 同步镜像
+反馈与记录写 data/ 分类目录主源，再执行 migrate-layout mirror 生成 data/ 根兼容副本
 ```
 
 ## 4. 文档地图
@@ -158,7 +163,7 @@ deliver  outputs/<job-id>/story-video.mp4
 
 | 文档 | 记录时点 | 状态 |
 |---|---|---|
-| `overview-final.md` | E0/E1 与 A–D 交付 | 🔴 测试数与「新目录为 SSOT」结论已被代码推翻 |
+| `overview-final.md` | E0/E1 与 A–D 交付 | 🟡 测试数过期；「新目录为 SSOT」结论已于 2026-09-21 随映射反转重新成立 |
 | `overview.md` | P0/P1 工作流实施 | 🔴 测试数过期 |
 | `overview-data-template.md` | data/templates 分层评审 | 🟡 结论有效，落地口径见 §2.5 |
 | `overview-enterprise-review.md` | 企业级评审 | 🟡 优先级仍有效 |
@@ -211,16 +216,16 @@ deliver  outputs/<job-id>/story-video.mp4
 
 | ID | 冲突 | 严重度 | 涉及位置 | 处置 |
 |---|---|---|---|---|
-| C-01 | 文档称「分类目录是 SSOT，旧根文件只读不再写入」，代码却把根文件定义为 mirror **source**、镜像必须字节一致 | 🔴 | 起源：提交 `af46bfc`（align D writes）把 `CLAUDE.md` 规则 7 改成写分类目录 ↔ `migrate-layout.mjs:8-15,32,54` 仍固定根文件为主源 | ✅ **2026-09-21 按用户指示「以代码为准」裁定**：文档统一为 §2.5（读分类、写主源、写完 mirror）。遗留故障仍待处理：2026-09-08 有一条任务记录只写进了镜像 `data/operations/tasks.md`，触发 `Migration target differs`，使 `npm test` 2 项失败。恢复：把该行并回主源 `data/tasks.md` 后执行 `node scripts/migrate-layout.mjs mirror`（涉及个人运行时数据，需用户确认）。替代方案：若更想保留 `af46bfc` 的原意图（分类目录为写入权威），则应反转 `MAPPINGS` 的方向并同步修订 §2.5——属代码改动，未在本次授权内 |
+| C-01 | 文档称「分类目录是写入权威」，代码却把 `data/` 根文件定义为 mirror **source**、副本必须字节一致，二者相反 | ✅ 已解决 | 起源 `af46bfc`（改文档）↔ `migrate-layout.mjs` MAPPINGS（改代码前） | ✅ **2026-09-21 用户拍板：改代码，让分类目录成为权威。** `MAPPINGS` 中 5 组 data 映射已交换方向，`data/` 根文件降级为向后兼容副本；`data/operations/tasks.md` 独有的 2026-09-08 记录以较新版本覆盖到根副本，`mirror` 与 `--check` 均通过。`templates/` 半区保持根文件为权威（catalog 与 .gitignore 已钉死），该非对称是有意决定，理由记在 §2.5 |
 | C-02 | 文档记录 `npm run start`（Remotion Studio 预览），但 `package.json` 无此脚本，且总纲已声明该入口已移除 | 🔴 | `AGENT_STORY_WORKFLOW.md` 本地开发段 ↔ `package.json:5-21`、`docs/maintenance.md:38` | ✅ 已删除该指引，并说明无网页预览入口 |
 | C-03 | 文档把 `npm run build:story` 当独立可用命令且声称输出进任务目录，实际缺省输入 `src/story/sampleStory.json` 不存在、缺省输出 `./out/` | 🔴 | `AGENT_STORY_WORKFLOW.md` 渲染段、`CLAUDE.md` 标准命令 ↔ `render-video.mjs:11,23` | ✅ 已在 §2.6 与各文档标注为流水线内部命令 |
-| C-04 | 测试数字四处不一致：7/7、26/26、5 项、「没有 npm test」 | 🟡 | `overview.md`、`overview-final.md`、`project-improvement-report*.md`、`docs/workflow-roadmap-openmontage.md:379` | ✅ 快照文档标 🔴 并加时点说明；权威数字统一到 §2.4（15 个测试文件、37 项，实测 35 通过 2 失败） |
+| C-04 | 测试数字四处不一致：7/7、26/26、5 项、「没有 npm test」 | 🟡 | `overview.md`、`overview-final.md`、`project-improvement-report*.md`、`docs/workflow-roadmap-openmontage.md:379` | ✅ 快照文档标 🔴 并加时点说明；权威数字统一到 §2.4（15 个测试文件、36 项，2026-09-21 全部通过） |
 | C-05 | `docs/data-and-privacy.md` 称整个 `data/` 不进 Git，实际 `data/memory/` 两份文件已提交 | 🟡 | `docs/data-and-privacy.md:9` ↔ `.gitignore:2-6`、`git ls-files` | ✅ 已补例外说明 |
 | C-06 | `docs/data-template-boundary.md` §5 把「CLAUDE.md 当前要求读取 `data/profile.md` 等根文件」当作现状描述；§7 迁移策略只写到 C 阶段 | 🟡 | 该文件 §5、§7 ↔ `CLAUDE.md` 规则 1 | ✅ 已标注为设计时点，并补 D 阶段与 §2.5 实际方向 |
 | C-07 | `docs/enterprise-roadmap.md` §3 列的 4 条「当前代码缺口」已被 E0 实现（状态迁移、快照唯一输入、契约闭环） | 🟡 | 该文件 §3 ↔ `task-state-migrations.mjs`、`pipeline.mjs:58,79` | ✅ 已加时点与实现状态标注 |
 | C-08 | 文档称 Agnes 支持 Base64 输出（`return_base64` / `data[0].b64_json`），代码只实现 URL | 🟡 | `AGENT_STORY_WORKFLOW.md` Agnes 段 ↔ `generate-story-images.mjs:107-116` | ✅ 已标注为未实现 |
 | C-09 | 根目录 6 份快照文档未登记在 `README.md` 与总纲文档地图中，导致同一事实多版本并存 | 🟡 | 根 `overview*.md`、`project-improvement-report*.md` | ✅ 已登记 §4.2 并加顶部时点警示 |
-| C-10 | `migrate-layout.mjs` 在文件底部直接执行 CLI，任何 `import` 它的测试都会连带跑一次 `mirror()`，使数据漂移放大为测试失败 | ⬜ 待拍板 | `migrate-layout.mjs:76-81`；受影响 `test/catalog-consistency.test.mjs:5` | ⬜ 属代码改动，超出本次文档整理授权。建议加 `import.meta.url` 守卫 |
+| C-10 | `migrate-layout.mjs` 在文件底部无条件执行 CLI，任何 `import` 它的测试都会连带跑一次 `mirror()`，把一条数据漂移放大为多个测试文件失败 | ✅ 已解决 | `migrate-layout.mjs` 底部；原受影响 `test/catalog-consistency.test.mjs:5`、`test/migrate-layout.test.mjs:6` | ✅ 2026-09-21 已加 `pathToFileURL(process.argv[1])` 直接执行守卫，`import` 只导出函数无副作用；`migrate-layout.test.mjs` 的 targets 列表同步改为真实副本路径，若守卫回归该测试会以未捕获异常失败 |
 | C-11 | 生成链路曾把某台机器的 WorkBuddy Python 绝对路径写死在 `doctor.mjs`、`pipeline.mjs`、`run-edge-tts.mjs`，换环境即断链；文档原先也未记录该依赖 | ✅ 已解决 | 提交 `bb3f710` 新增 `scripts/runtime-tools.mjs` 统一解析（含 `runtime-tools.test.mjs`） | ✅ 硬编码路径已移除，解析规则写入 §2.4。本机仍需注意：PATH 上的 Python 未装 `edge_tts`，跑 `doctor`/`make:video` 前要设置 `PYTHON_BIN`，否则三项候选全报 ModuleNotFound 并以 exit=1 结束（刻意的诚实失败，非回归） |
 
 ## 8. 变更日志
@@ -231,4 +236,5 @@ deliver  outputs/<job-id>/story-video.mp4
 | 2026-09-02 | 固化项目级视频生成入口硬规则 | Ybond |
 | 2026-09-04 | 全仓评审，输出 P0/P1 改进项 | Ybond |
 | 2026-09-07 | P0/P1、E0/E1、A–D 阶段实施概览并入文档 | Ybond |
-| 2026-09-21 | 以代码为准做全量文档一致性核对：新增 §2.5 镜像主源方向、§2.6 单阶段命令边界、§2.3 Provider 事实与代码行号依据、§2.4 环境解析规则、§4 文档状态与权威度、§5 同步映射表、§7 冲突登记（C-01～C-11）、§8 变更日志；修正 `npm run start` 失效指引、`build:story` 误用、Base64 未实现、`data/` 忽略范围、过期测试数字、roadmap 缺口清单时点、根 6 份快照文档登记。同日本项目 HEAD 前进至 `bb3f710`（移除硬编码 Python 绝对路径），§2.4 与 C-11 已按新实现记录。**本次仅改文档**：未修改任何代码，未改写 `data/` 下运行时数据（C-01 遗留的镜像漂移待用户确认后再并回主源） | Qoder 代理 |
+| 2026-09-21 | 以代码为准做全量文档一致性核对：新增 §2.5 镜像方向、§2.6 单阶段命令边界、§2.3 Provider 事实与代码行号依据、§2.4 环境解析规则、§4 文档状态与权威度、§5 同步映射表、§7 冲突登记（C-01～C-11）、§8 变更日志；修正 `npm run start` 失效指引、`build:story` 误用、Base64 未实现、`data/` 忽略范围、过期测试数字、roadmap 缺口清单时点，并把根目录 6 份快照登记进 §4.2。核对期间本项目 HEAD 前进至 `bb3f710`（移除硬编码 Python 路径），§2.4 与 C-11 已按新实现记录。此提交（`35df6e2`）只改文档 | Qoder 代理 |
+| 2026-09-21 | 用户就 C-01 拍板「改代码让分类目录成为写入权威」：`migrate-layout.mjs` 交换 5 组 data 映射方向（templates 半区保持不动并写明理由），`data/operations/tasks.md` 独有的 2026-09-08 记录以较新版本覆盖根副本；补 `import.meta.url` 守卫消除 import 副作用（C-10），`migrate-layout.test.mjs` 的 targets 列表改为真实副本路径。`npm test` 由 35/37 恢复为 **36/36 全通过**，`mirror` 与 `--check` 通过。§2.4/§2.5/§7 与 README、CLAUDE、workflow、architecture、data-template-boundary、AGENT_STORY_WORKFLOW、overview-final 的写入口径同步反转。改动前已备份 `data/` 双侧文件与 layout-map 至 `C:\Users\ybd06\temp\dsp-data-backup-20260921` | Qoder 代理 |

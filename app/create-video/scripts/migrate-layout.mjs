@@ -1,15 +1,19 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { pathToFileURL } from 'node:url';
 
 const PROJECT_ROOT = path.resolve(process.cwd(), '../..');
 const MAP_FILE = path.join(PROJECT_ROOT, 'data/.migration/layout-map.json');
+// data：分类目录是写入主源，data/ 根文件是向后兼容的镜像副本（2026-09-21 决策，兑现 D 阶段原意图）。
+// templates：根模板是写入主源，templates/story/ 是镜像副本。此处刻意不对称——catalog.json 按根路径钉
+// sha256，且 .gitignore 已把 story/ 副本排除在版本库外；反转会连带改动 Git 跟踪范围与指纹固定，收益为零。
 const MAPPINGS = Object.freeze([
-  ['data/profile.md', 'data/context/profile.md'],
-  ['data/preferences.md', 'data/context/preferences.md'],
-  ['data/knowledge.md', 'data/knowledge/legacy.md'],
-  ['data/history.md', 'data/analytics/history.md'],
-  ['data/tasks.md', 'data/operations/tasks.md'],
+  ['data/context/profile.md', 'data/profile.md'],
+  ['data/context/preferences.md', 'data/preferences.md'],
+  ['data/knowledge/legacy.md', 'data/knowledge.md'],
+  ['data/analytics/history.md', 'data/history.md'],
+  ['data/operations/tasks.md', 'data/tasks.md'],
   ['templates/title-template.md', 'templates/story/title-template.md'],
   ['templates/script-template.md', 'templates/story/script-template.md'],
 ]);
@@ -73,9 +77,13 @@ export const checkCatalogHashes = async () => {
   return true;
 };
 
-const command = process.argv[2] ?? 'mirror';
-try {
-  if (command === 'mirror') { await mirror(); console.log('Layout mirror complete'); }
-  else if (command === '--check' || command === 'check') { await check(); await checkCatalogHashes(); console.log('Layout check passed'); }
-  else throw new Error(`Unknown command: ${command}`);
-} catch (error) { console.error(error.message); process.exitCode = 1; }
+// 仅在直接执行本文件时跑 CLI。此前底部无条件派发，任何 import 本模块的测试都会连带执行一次
+// mirror()，把单条数据漂移放大成多个测试文件失败（见 PROJECT_INDEX.md §7 C-10）。
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const command = process.argv[2] ?? 'mirror';
+  try {
+    if (command === 'mirror') { await mirror(); console.log('Layout mirror complete'); }
+    else if (command === '--check' || command === 'check') { await check(); await checkCatalogHashes(); console.log('Layout check passed'); }
+    else throw new Error(`Unknown command: ${command}`);
+  } catch (error) { console.error(error.message); process.exitCode = 1; }
+}

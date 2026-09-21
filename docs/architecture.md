@@ -12,7 +12,7 @@
 
 `data/` 是项目运行时数据目录。其中 `data/memory/` 保存 DSP 自身可复用的创作规则，是项目记忆 SSOT（随 Git 提交）；`data/context/`、`data/knowledge/`、`data/feedback/`、`data/analytics/` 和 `data/operations/` 保存用户上下文、知识、反馈、发布数据和运营记录，默认不提交。
 
-`data/` 根部的 `profile.md`、`preferences.md`、`knowledge.md`、`history.md`、`tasks.md` 是上述分类目录的**镜像主源**：Agent 可从任一侧读取，但写入只写主源，随后执行 `migrate-layout.mjs mirror` 保持副本一致，映射与规则见 [项目总纲 §2.5](../PROJECT_INDEX.md)。
+`data/` 根部的 `profile.md`、`preferences.md`、`knowledge.md`、`history.md`、`tasks.md` 是上述分类目录的**兼容副本**，由 `migrate-layout.mjs mirror` 生成、不提交也不手工编辑：写入一律落在分类目录主源，写完执行 `mirror`，映射与规则见 [项目总纲 §2.5](../PROJECT_INDEX.md)。
 
 Agent 每次创作前先读取项目记忆，再按任务读取其他资料；用户通过 Agent 提出的修改意见也写回对应目录。`.workbuddy/` 仅属于开发工具，不参与创作记忆。
 
