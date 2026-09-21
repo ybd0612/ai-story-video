@@ -6,7 +6,7 @@
 > | 建议 | 状态 | 代码依据 |
 > |---|---|---|
 > | P0-1 任务状态、失败记录、恢复入口 | ✅ 已实现 | `task-state.mjs`（`status.json`、阶段/镜头状态、`retryableStage`）、`JOB_ID + RESUME=1` |
-> | P0-2 外部调用超时、重试、退避、原子落盘 | ✅ 已实现 | `generate-story-images.mjs` `fetchWithRetry`（`AGNES_REQUEST_TIMEOUT_MS`、`AGNES_MAX_RETRIES`、尊重 `Retry-After`、5xx/429 才重试）、`writeAtomically` |
+> | P0-2 外部调用超时、重试、退避、原子落盘 | 🟡 分侧完成 | 图片侧早已实现：`fetchWithRetry`（`AGNES_REQUEST_TIMEOUT_MS`、`AGNES_MAX_RETRIES`、尊重 `Retry-After`、5xx/429 才重试）+ `writeAtomically`。TTS 侧当时**未做**，一条 `NoAudioReceived` 即整阶段失败；2026-09-21 真跑复现后由 `scripts/tts_retry.py` 补齐（逐次新建连接、指数退避、失败删半成品），见总纲 §7 C-15 |
 > | P0-3 集中命令与环境变量 SSOT、增加 `doctor` | ✅ 已实现 | `npm run doctor`、`PROJECT_INDEX.md` §2 |
 > | P1-4 schema 成为唯一校验入口 | 🟡 部分 | `schemas/` 已按产物分层，`storyRepository` 进入渲染前做运行时校验；`story.schema.json` 与脚本校验规则仍未合并 |
 > | P1-5 并发与重复运行边界 | ✅ 已实现 | `run.lock`、已存在 `status.json` 时拒绝覆盖、渲染经 `--props` 不再写共享 `src/story/currentStory.json` |

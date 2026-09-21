@@ -27,6 +27,7 @@ data/.migration/
 **/node_modules/
 **/out/
 **/dist/
+**/__pycache__/
 
 # 本地密钥和配置
 .env

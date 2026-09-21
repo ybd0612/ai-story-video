@@ -6,6 +6,8 @@ from pathlib import Path
 
 import edge_tts
 
+from tts_retry import call_with_retry
+
 INPUT = Path(os.environ.get("STORY_FILE", "./story.json")).resolve()
 OUTPUT = Path(os.environ.get("STORY_OUTPUT", "./story.with-audio.json")).resolve()
 AUDIO_DIR = Path(os.environ.get("STORY_AUDIO_DIR", "./public/audio")).resolve()
@@ -14,6 +16,7 @@ RATE = os.environ.get("EDGE_TTS_RATE", "+0%")
 PITCH = os.environ.get("EDGE_TTS_PITCH", "+0Hz")
 PAUSE_SECONDS = float(os.environ.get("AUDIO_PAUSE_SECONDS", "0.5"))
 FFPROBE = os.environ.get("FFPROBE_BIN", "ffprobe")
+TTS_ATTEMPTS = int(os.environ.get("EDGE_TTS_MAX_RETRIES", "3"))
 
 
 def get_audio_duration(audio_path: Path) -> float:
@@ -65,14 +68,12 @@ async def main():
                 continue
             except (OSError, subprocess.SubprocessError, ValueError):
                 output_path.unlink(missing_ok=True)
-        communicate = edge_tts.Communicate(
-            scene["narration"],
-            VOICE,
-            rate=RATE,
-            pitch=PITCH,
-        )
-        await communicate.save(str(output_path))
-        audio_duration = get_audio_duration(output_path)
+        async def produce(_attempt: int) -> float:
+            # 每次尝试都重新构造 Communicate，避免复用已过期的会话凭据
+            await edge_tts.Communicate(scene["narration"], VOICE, rate=RATE, pitch=PITCH).save(str(output_path))
+            return get_audio_duration(output_path)
+
+        audio_duration = await call_with_retry(produce, out_path=output_path, attempts=TTS_ATTEMPTS)
         scene_duration = max(float(scene.get("durationInSeconds", 0)), audio_duration + PAUSE_SECONDS)
         print(
             f"[{index}/{len(scenes)}] 生成旁白 {output_path}，"

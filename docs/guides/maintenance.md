@@ -24,6 +24,7 @@ node --check scripts/make-video.mjs
 node --check scripts/generate-story-images.mjs
 node --check scripts/prepare-story.mjs
 node --check scripts/render-video.mjs
+"$env:PYTHON_BIN" -m py_compile scripts/generate-edge-tts.py scripts/tts_retry.py
 ```
 
 `migrate-layout.mjs --check` 会校验 `data/` 与 `templates/` 的主源—镜像一致性以及 `templates/catalog.json` 的 sha256；改过主源或 catalog 收录的文件后必须先跑 `mirror` 再跑 `--check`（口径见 `PROJECT_INDEX.md` §2.5）。

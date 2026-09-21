@@ -64,6 +64,7 @@ Git 跟踪范围以 `git ls-files | wc -l` 的实时输出为准，本文件不�
 | 图片 RPM | default 20/10/1/1，enterprise 40/20/1/1，TokenPlan 100/80/1/1（1K/2K/3K/4K），串行限速 | 同上 `:15-25` |
 | 音频 Provider | `edge-tts` → `scripts/generate-edge-tts.py`（Python） | `providers/default-providers.mjs` |
 | 旁白默认音色 | `zh-CN-YunxiNeural`，可用 `EDGE_TTS_VOICE` 覆盖；`EDGE_TTS_RATE=+0%`、`EDGE_TTS_PITCH=+0Hz` | `generate-edge-tts.py:12`、`generate-edge-tts.mjs:7-9` |
+| 旁白重试 | 每镜头最多 `EDGE_TTS_MAX_RETRIES`（默认 3）次，**每次重新建连**、指数退避 1s/2s/4s，失败即删除半成品再试；全部失败才让 `tts` 阶段失败 | `scripts/tts_retry.py`、`test/tts-retry.test.mjs` |
 | 镜头时长 | ffprobe 实测音频时长 + 0.5 秒余量 | `validate-audio-duration.mjs` |
 | 渲染 Provider | `remotion` → `scripts/render-video.mjs` | `providers/default-providers.mjs` |
 
@@ -76,7 +77,7 @@ Git 跟踪范围以 `git ls-files | wc -l` 的实时输出为准，本文件不�
 | ffprobe 默认 | `FFPROBE_BIN`，缺省 `ffprobe`（依赖 PATH） |
 | 行尾与指纹稳定性 | `.gitattributes` 固定 `* text=auto eol=lf`（媒体与字体标 binary）。`templates/catalog.json` 与 `data/.migration/layout-map.json` 都按**字节**钉 sha256，若依赖 `core.autocrlf=true` 检出成 CRLF，克隆后指纹必然对不上 |
 | 阶段顺序 | `validate → images → tts → audio-validation → prepare → render → deliver`（`task-state.mjs` `STAGE_ORDER`） |
-| 测试基线 | `npm test` 共 36 项；本机 2026-09-21 全部通过。此前记录的「37 项 / 2 失败」中第 37 项是 `migrate-layout.mjs` 在 import 时执行 `mirror()` 产生的伪失败，加守卫后消失。**新克隆**：`data/` 个人主源不入库，布局镜像用例带原因自动 skip，其余应全绿 |
+| 测试基线 | 以 `cd app/create-video && npm test` 的实时输出为准，本文件不复述项数（历史数字反复过期，见 §7 C-12）。语义：全部通过、无 skip 视为绿；**新克隆**上 `migrate-layout` 与 `tts-retry` 用例会因缺少 `data/` 个人主源或 Python 解释器而带原因 skip，属预期而非回归 |
 
 ### 2.5 `data/` 与 `templates/` 镜像口径（易错，务必照此执行）
 
@@ -256,6 +257,7 @@ deliver  outputs/<job-id>/story-video.mp4
 | C-12 | **快照的"顶部修订注记"本身发生漂移**：为纠正旧数字而写的注记又钉上了新瞬时数字（`37 项`、`100 个文件`），代码继续推进后注记比正文更快过期，形成"三层数字"（正文时点值 / 注记值 / §2.4 实测值） | 🟡 | `docs/history/overview-p0-p1-workflow.md:5`、`overview-e0-e1-a-d.md:6`、`project-improvement-report-2026-09-04.md:3`、`phase2-...md:3` ↔ 本文件 §1 与 §2.4 | ✅ 2026-09-21 复跑治理时发现：四处注记全部改为**只指向 §2.4 或实时命令**（`git ls-files \| wc -l`、`node --test test/*.test.mjs`），不再复述项数与文件数；§1 同步去掉「跟踪 100 个文件」。实测基线复核为 15 个测试文件 36 项全通过。**规则补进 §5：修订注记只写指针，不写数值。** |
 | C-13 | §1 声明 `temp/` 为"草稿与中间暂存 · 忽略"，但 `.gitignore` 从未包含 `temp/`，导致 `temp/prenatal-lullaby/` 下 4 份个人题材故事草稿处于**已跟踪**状态，一旦推送即公开 | 🔴 | `.gitignore` ↔ 本文件 §1；受影响 `temp/prenatal-lullaby/{story.draft.json,story.json,story.approved,story.approval-state.json}` | ✅ 2026-09-21 推送前审查发现：`.gitignore` 补 `temp/*` + `!temp/.gitkeep`，并 `git rm --cached -r temp/prenatal-lullaby`（磁盘文件保留，仓库不再跟踪；该路径从未进入远程，故未被公开过）。**教训：审查公开范围要看 `git ls-files` 全集，不能只看本次 diff。** |
 | C-14 | **新克隆的仓库自测不通过**（本机却全绿，故此前不可见）：`core.autocrlf=true` 在检出时把 LF 转 CRLF，使 `templates/catalog.json` 记录的 sha256 与实际字节不符；同时 `migrate-layout.test` 以 `data/` 分类目录为主源，而这些个人文件不入库，干净克隆报 `Migration source missing` | ✅ 已解决 | 实测于等价新克隆：`npm test` 36 项中 2 失败（`catalog-consistency.test.mjs:17`、`migrate-layout.test.mjs:11`） | ✅ 2026-09-21 修复：新增 `.gitattributes`（`* text=auto eol=lf` + 媒体 binary）固定行尾，`git add --renormalize .` 复核为**零改动**（索引本就是 LF，无大规模换行重排）；`migrate-layout.test` 改为探测五组 data 主源，缺失时带原因 skip。本机复验 36/36 通过、`--check` 通过 |
+| C-15 | 2026-09-04 审查报告 P0-2 把"外部调用超时、重试、退避、原子落盘"记为已落地，**实际只对图片调用实现**（`fetchWithRetry` + `writeAtomically`）；TTS 一条 `NoAudioReceived` 就让整个 `tts` 阶段失败，无重试。⚠️ 我 2026-09-21 做全仓核查时把该行标注成 ✅ 已实现，属漏查——只核对了图片侧 | ✅ 已解决 | `generate-edge-tts.py` 原 save 段 ↔ `docs/history/project-improvement-report-2026-09-04.md` P0-2 与顶部状态表；2026-09-21 真跑复现（第 2 镜失败，续跑第 2 次成功） | ✅ 新增 `scripts/tts_retry.py`（逐次新建连接、指数退避 1s/2s/4s、失败删半成品、`EDGE_TTS_MAX_RETRIES` 默认 3）并接入 `generate-edge-tts.py`。回归 `test/tts-retry.test.mjs` 先跑 RED 再跑 GREEN，并做**变异验证**（去掉退避即红、还原即绿）确认真的会咬人；真实 TTS 通路复跑 2 镜头 5.4s 成功、时长与交付片一致。报告顶部状态表已改为 🟡 并注明漏查 |
 
 ## 8. 变更日志
 

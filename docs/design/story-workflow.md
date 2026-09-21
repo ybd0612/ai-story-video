@@ -135,12 +135,15 @@ npm run generate:images
 
 解释器由 `scripts/runtime-tools.mjs` 统一解析（`doctor`、`pipeline`、`generate:tts` 共用同一入口）：设置了 `PYTHON_BIN` 就只用它、不可用时直接报 `PYTHON_BIN_UNUSABLE` 而不静默回退；未设置时依次探测 `VIRTUAL_ENV` 解释器、`py -3`（Windows）、`python`、`python3`，并要求能成功 `import edge_tts`，全部失败报 `PYTHON_RUNTIME_NOT_FOUND`。本机 PATH 上的 Python 未装 `edge_tts`，跑 TTS 前需先设置 `PYTHON_BIN`。
 
+每个镜头最多重试 `EDGE_TTS_MAX_RETRIES`（默认 3）次。微软端点会偶发返回"无音频"（`NoAudioReceived`），助手 `scripts/tts_retry.py` 为此**每次重试都重新构造 `Communicate`**（避免复用已过期的会话凭据）、按 1s/2s/4s 指数退避，并在每次失败后删除半成品，防止坏音频被后续复用当作有效产物。全部尝试失败才会让 `tts` 阶段失败并写下 `retryableStage`。回归见 `test/tts-retry.test.mjs`（内部执行 `python scripts/tts_retry.py --selftest`，不依赖网络与 `edge_tts`）。
+
 生成逐镜头 MP3：
 
 ```powershell
 $env:EDGE_TTS_VOICE = "zh-CN-YunxiNeural"
 $env:EDGE_TTS_RATE = "+0%"
 $env:EDGE_TTS_PITCH = "+0Hz"
+$env:EDGE_TTS_MAX_RETRIES = "3"
 npm run generate:tts
 ```
 
