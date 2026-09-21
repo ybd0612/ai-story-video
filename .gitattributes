@@ -1,0 +1,20 @@
+# 统一行尾：入库与检出都用 LF。
+# 必要性：templates/catalog.json 与 data/.migration/layout-map.json 都按文件字节钉 sha256，
+# 而 core.autocrlf=true 会在检出时把 LF 转成 CRLF，导致克隆后的字节与记录的指纹不一致，
+# 使 migrate-layout --check 与 catalog 一致性测试在任何 Windows 克隆上必然失败。
+* text=auto eol=lf
+
+# 二进制产物不做任何换行处理，避免指纹被行尾转换污染
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.mp3 binary
+*.mp4 binary
+*.wav binary
+*.m4a binary
+*.ttf binary
+*.woff binary
+*.woff2 binary

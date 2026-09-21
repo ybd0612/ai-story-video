@@ -38,6 +38,14 @@ npm run dry-run -- ./story.json
 
 不要在没有密钥、用户确认和真实输入的情况下调用图片或配音服务。
 
+## 新克隆注意
+
+`data/` 的个人运行时上下文（`context/`、`knowledge/`、`analytics/`、`operations/`）按设计不入 Git，因此在干净克隆上：
+
+- `node scripts/migrate-layout.mjs --check` 会报 `Migration source missing: data/context/profile.md` —— 这是**缺个人数据**，不是漂移；本机初始化这些文件后才可用。
+- `npm test` 中的布局镜像用例会带原因自动 skip（其余用例应全绿），别把它当回归。
+- `.gitattributes` 已固定 `* text=auto eol=lf`。`templates/catalog.json` 与 `data/.migration/layout-map.json` 按字节钉 sha256，若在本机改回 `core.autocrlf=true` 的检出行为会得到 CRLF 文件，catalog 哈希校验将必然失败——遇到 `catalog hash mismatch` 先核对文件行尾，再怀疑内容。
+
 ## 体积维护
 
 本项目不提供 Remotion Studio 网页预览，只保留命令行生成链路。`node_modules/.cache/` 和 `node_modules/.remotion/` 是可重建缓存，体积异常时可以清理后重新生成；不要清理 `package-lock.json`。

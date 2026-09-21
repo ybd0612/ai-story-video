@@ -1,12 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import os from 'node:os';
 import path from 'node:path';
 import { mirror, check } from '../scripts/migrate-layout.mjs';
 
-test('layout migration is idempotent and rejects target drift', async () => {
-  const root = path.resolve(process.cwd(), '../..');
+const root = path.resolve(process.cwd(), '../..');
+// data/ 的个人运行时主源按设计不入 Git；新克隆缺这些文件时跳过，不算失败
+const DATA_SOURCES = ['data/context/profile.md', 'data/context/preferences.md', 'data/knowledge/legacy.md', 'data/analytics/history.md', 'data/operations/tasks.md'];
+const hasUserData = (await Promise.all(DATA_SOURCES.map((file) => fs.access(path.join(root, file)).then(() => true, () => false)))).every(Boolean);
+
+test('layout migration is idempotent and rejects target drift', {
+  skip: hasUserData ? false : '未检测到 data/ 个人运行时主源（该目录不入库），跳过镜像一致性校验',
+}, async () => {
   const targets = ['data/profile.md', 'data/preferences.md', 'data/knowledge.md', 'data/history.md', 'data/tasks.md', 'templates/story/title-template.md', 'templates/story/script-template.md'];
   await mirror();
   await assert.doesNotReject(() => check());

@@ -74,8 +74,9 @@ Git 跟踪范围以 `git ls-files | wc -l` 的实时输出为准，本文件不�
 | API Key | 环境变量 `AGNES_API_KEY`，禁止写入任何文件与 Git |
 | Python 解析 | 统一由 `scripts/runtime-tools.mjs` 负责（`doctor.mjs`、`pipeline.mjs`、`run-edge-tts.mjs` 共用）。设置 `PYTHON_BIN` 时**只用它且不回退**，不可用即报 `PYTHON_BIN_UNUSABLE`；未设置时按 `VIRTUAL_ENV` 解释器 → `py -3`（Windows）→ `python` → `python3` 依次探测，且要求能成功 `import edge_tts`，全部失败报 `PYTHON_RUNTIME_NOT_FOUND`。探测超时 `PYTHON_PROBE_TIMEOUT_MS`，默认 15000 |
 | ffprobe 默认 | `FFPROBE_BIN`，缺省 `ffprobe`（依赖 PATH） |
+| 行尾与指纹稳定性 | `.gitattributes` 固定 `* text=auto eol=lf`（媒体与字体标 binary）。`templates/catalog.json` 与 `data/.migration/layout-map.json` 都按**字节**钉 sha256，若依赖 `core.autocrlf=true` 检出成 CRLF，克隆后指纹必然对不上 |
 | 阶段顺序 | `validate → images → tts → audio-validation → prepare → render → deliver`（`task-state.mjs` `STAGE_ORDER`） |
-| 测试基线 | `npm test` 共 36 项；2026-09-21 全部通过。此前记录的「37 项 / 2 失败」中第 37 项是 `migrate-layout.mjs` 在 import 时执行 `mirror()` 产生的伪失败，加守卫后消失 |
+| 测试基线 | `npm test` 共 36 项；本机 2026-09-21 全部通过。此前记录的「37 项 / 2 失败」中第 37 项是 `migrate-layout.mjs` 在 import 时执行 `mirror()` 产生的伪失败，加守卫后消失。**新克隆**：`data/` 个人主源不入库，布局镜像用例带原因自动 skip，其余应全绿 |
 
 ### 2.5 `data/` 与 `templates/` 镜像口径（易错，务必照此执行）
 
@@ -254,6 +255,7 @@ deliver  outputs/<job-id>/story-video.mp4
 | C-11 | 生成链路曾把某台机器的 WorkBuddy Python 绝对路径写死在 `doctor.mjs`、`pipeline.mjs`、`run-edge-tts.mjs`，换环境即断链；文档原先也未记录该依赖 | ✅ 已解决 | 提交 `bb3f710` 新增 `scripts/runtime-tools.mjs` 统一解析（含 `runtime-tools.test.mjs`） | ✅ 硬编码路径已移除，解析规则写入 §2.4。本机仍需注意：PATH 上的 Python 未装 `edge_tts`，跑 `doctor`/`make:video` 前要设置 `PYTHON_BIN`，否则三项候选全报 ModuleNotFound 并以 exit=1 结束（刻意的诚实失败，非回归） |
 | C-12 | **快照的"顶部修订注记"本身发生漂移**：为纠正旧数字而写的注记又钉上了新瞬时数字（`37 项`、`100 个文件`），代码继续推进后注记比正文更快过期，形成"三层数字"（正文时点值 / 注记值 / §2.4 实测值） | 🟡 | `docs/history/overview-p0-p1-workflow.md:5`、`overview-e0-e1-a-d.md:6`、`project-improvement-report-2026-09-04.md:3`、`phase2-...md:3` ↔ 本文件 §1 与 §2.4 | ✅ 2026-09-21 复跑治理时发现：四处注记全部改为**只指向 §2.4 或实时命令**（`git ls-files \| wc -l`、`node --test test/*.test.mjs`），不再复述项数与文件数；§1 同步去掉「跟踪 100 个文件」。实测基线复核为 15 个测试文件 36 项全通过。**规则补进 §5：修订注记只写指针，不写数值。** |
 | C-13 | §1 声明 `temp/` 为"草稿与中间暂存 · 忽略"，但 `.gitignore` 从未包含 `temp/`，导致 `temp/prenatal-lullaby/` 下 4 份个人题材故事草稿处于**已跟踪**状态，一旦推送即公开 | 🔴 | `.gitignore` ↔ 本文件 §1；受影响 `temp/prenatal-lullaby/{story.draft.json,story.json,story.approved,story.approval-state.json}` | ✅ 2026-09-21 推送前审查发现：`.gitignore` 补 `temp/*` + `!temp/.gitkeep`，并 `git rm --cached -r temp/prenatal-lullaby`（磁盘文件保留，仓库不再跟踪；该路径从未进入远程，故未被公开过）。**教训：审查公开范围要看 `git ls-files` 全集，不能只看本次 diff。** |
+| C-14 | **新克隆的仓库自测不通过**（本机却全绿，故此前不可见）：`core.autocrlf=true` 在检出时把 LF 转 CRLF，使 `templates/catalog.json` 记录的 sha256 与实际字节不符；同时 `migrate-layout.test` 以 `data/` 分类目录为主源，而这些个人文件不入库，干净克隆报 `Migration source missing` | ✅ 已解决 | 实测于等价新克隆：`npm test` 36 项中 2 失败（`catalog-consistency.test.mjs:17`、`migrate-layout.test.mjs:11`） | ✅ 2026-09-21 修复：新增 `.gitattributes`（`* text=auto eol=lf` + 媒体 binary）固定行尾，`git add --renormalize .` 复核为**零改动**（索引本就是 LF，无大规模换行重排）；`migrate-layout.test` 改为探测五组 data 主源，缺失时带原因 skip。本机复验 36/36 通过、`--check` 通过 |
 
 ## 8. 变更日志
 
@@ -267,3 +269,4 @@ deliver  outputs/<job-id>/story-video.mp4
 | 2026-09-21 | 用户就 C-01 拍板「改代码让分类目录成为写入权威」（`3b9cf02`）：`migrate-layout.mjs` 交换 5 组 data 映射方向（templates 半区保持不动并写明理由），`data/operations/tasks.md` 独有的 2026-09-08 记录以较新版本覆盖根副本；补 `import.meta.url` 守卫消除 import 副作用（C-10），`migrate-layout.test.mjs` 的 targets 列表改为真实副本路径。`npm test` 由 35/37 恢复为 **36/36 全通过**，`mirror` 与 `--check` 通过。§2.4/§2.5/§7 与 README、CLAUDE、workflow、architecture、data-template-boundary、story-workflow、overview-final 的写入口径同步反转。改动前已备份 `data/` 双侧文件与 layout-map 至 `C:\Users\ybd06\temp\dsp-data-backup-20260921` | Qoder 代理 |
 | 2026-09-21 | **文档结构重组**：除根级 `README.md` 与 `CLAUDE.md` 外全部文档迁入 `docs/` 并按作用分区（`design/`、`guides/`、`roadmap/`、`adr/`、`history/`），本总纲与新增的 `docs/CHANGELOG.md` 置于 `docs/` 顶层；`AGENT_STORY_WORKFLOW.md` 更名 `docs/design/story-workflow.md`，四份 overview 与两份 report 归档进 `docs/history/` 并带日期；新增 4 条 ADR 与 `CHANGELOG`，把散落各处的"更新内容"与"取舍依据"收敛到单一入口；脚本化重写全部跨文档链接（幂等复跑零改动），链接解析器全量校验无断链。§1 结构表、§4 文档地图、§4.4 放置规则、§5 同步映射同步更新 | Qoder 代理 |
 | 2026-09-21 | **重组后增量复核**（登记 C-12）：复跑治理发现"为纠正旧数字而写的快照顶部修订注记"自身已成新的漂移源——四处注记钉了 `37 项` / `100 个文件`，与 §2.4 实测及真实 `git ls-files` 均不符。`overview-p0-p1-workflow`、`overview-e0-e1-a-d`、两份 `project-improvement-report*` 的注记与 §1 一律改为指向 §2.4 或实时命令、不再复述数值；§5 禁止清单补入「修订注记只写指针」这条规则。本轮只改文档，未触碰代码 | Qoder 代理 |
+| 2026-09-21 | **新克隆自测修复**（登记 C-14）：新增 `.gitattributes` 固定 `eol=lf`（autocrlf 检出 CRLF 会破坏 catalog 的 sha256），布局镜像用例在缺 `data/` 个人主源时带原因 skip；`git add --renormalize .` 复核为零改动。明细见 `docs/CHANGELOG.md`。**今后逐轮变更明细只写 `docs/CHANGELOG.md`，本表只保留里程碑级条目，不再逐条膨胀** | Qoder 代理 |

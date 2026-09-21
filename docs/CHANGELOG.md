@@ -8,6 +8,13 @@
 
 ## 2026-09-21
 
+### 新克隆自测修复（登记 C-14）
+
+- 用等价新克隆复现：`npm test` 36 项中 2 项失败，而本机全绿，所以此前完全不可见。
+- 根因一：`core.autocrlf=true` 检出时把 LF 转成 CRLF，字节变化导致 `templates/catalog.json` 钉的 sha256 对不上，catalog 一致性用例在任何 Windows 克隆上必红。修复：新增 `.gitattributes` 固定 `* text=auto eol=lf`（媒体与字体标 binary），并复核 `git add --renormalize .` 为零改动——索引本就是 LF，不产生大规模换行重排。
+- 根因二：布局镜像用例以 `data/` 分类目录为主源，而这些个人文件按设计不入库，干净克隆报 `Migration source missing`。修复：先探测五组主源，缺失时带明确原因 skip，而不是当失败。
+- 文档同步：总纲 §2.4 新增行尾与指纹稳定性口径、README 状态一节说明新克隆可跑与 skip 语义、维护指南新增「新克隆注意」。
+
 ### 推送前安全审查（登记 C-13）
 
 - 审查公开范围时发现：总纲 §1 声明 `temp/` 不入库，但 `.gitignore` 从未有过该条目，`temp/prenatal-lullaby/` 下 4 份个人题材故事草稿处于**已跟踪**状态，推送即公开。
