@@ -7,6 +7,7 @@ import { createTaskState, readTaskState, runStage, updateTaskState, markInterrup
 import { stageIsComplete, validateDeliverContract } from './stage-contracts.mjs';
 import { createSnapshot, readSnapshotManifest, verifySnapshotImmutable } from './task-snapshot.mjs';
 import { createMetadataManifest, readMetadataManifest } from './metadata-manifest.mjs';
+import { pythonInvocation } from './runtime-tools.mjs';
 
 const run = (command, args, env = {}) => new Promise((resolve, reject) => {
   const child = spawn(command, args, { stdio: 'inherit', shell: false, env: { ...process.env, ...env }, cwd: process.cwd() });
@@ -63,9 +64,9 @@ export async function executePipeline({ source, jobId: requestedJobId = null, re
       'audio-validation': { paths, input: withAudio, output: withAudio, sceneIds: expectedScenes }, prepare: { paths, input: withAudio, output: currentStory, sceneIds: expectedScenes }, render: { paths, input: currentStory, output: videoOutput }, deliver: { paths, rendered: videoOutput, delivered },
     };
     const commands = {
-      validate: [process.execPath, ['scripts/validate-story.mjs', jobSource], {}], images: [process.execPath, ['scripts/generate-story-images.mjs'], { STORY_FILE: jobSource, STORY_OUTPUT: withImages, STORY_IMAGE_DIR: paths.images, STORY_PUBLIC_ROOT: paths.root }],
-      tts: [process.env.PYTHON_BIN ?? 'C:/Users/ybd06/.workbuddy/binaries/python/envs/default/Scripts/python.exe', ['scripts/generate-edge-tts.py'], { STORY_FILE: withImages, STORY_OUTPUT: withAudio, STORY_AUDIO_DIR: paths.audio, STORY_PUBLIC_ROOT: paths.root }],
-      'audio-validation': [process.execPath, ['scripts/validate-audio-duration.mjs', withAudio], { STORY_FILE: withAudio, STORY_PUBLIC_ROOT: paths.root }], prepare: [process.execPath, ['scripts/prepare-story.mjs'], { STORY_SOURCE: withAudio, STORY_TARGET: currentStory }], render: [process.execPath, ['scripts/render-video.mjs'], { STORY_CURRENT_FILE: currentStory, VIDEO_OUTPUT: videoOutput, JOB_PUBLIC_ROOT: paths.root }],
+      validate: [async () => ({ command: process.execPath, args: ['scripts/validate-story.mjs', jobSource] }), {}], images: [async () => ({ command: process.execPath, args: ['scripts/generate-story-images.mjs'] }), { STORY_FILE: jobSource, STORY_OUTPUT: withImages, STORY_IMAGE_DIR: paths.images, STORY_PUBLIC_ROOT: paths.root }],
+      tts: [async () => { const python = await pythonInvocation(); return { command: python.command, args: [...python.args, 'scripts/generate-edge-tts.py'] }; }, { STORY_FILE: withImages, STORY_OUTPUT: withAudio, STORY_AUDIO_DIR: paths.audio, STORY_PUBLIC_ROOT: paths.root }],
+      'audio-validation': [async () => ({ command: process.execPath, args: ['scripts/validate-audio-duration.mjs', withAudio] }), { STORY_FILE: withAudio, STORY_PUBLIC_ROOT: paths.root }], prepare: [async () => ({ command: process.execPath, args: ['scripts/prepare-story.mjs'] }), { STORY_SOURCE: withAudio, STORY_TARGET: currentStory }], render: [async () => ({ command: process.execPath, args: ['scripts/render-video.mjs'] }), { STORY_CURRENT_FILE: currentStory, VIDEO_OUTPUT: videoOutput, JOB_PUBLIC_ROOT: paths.root }],
     };
     let startIndex = retryStage ? STAGE_ORDER.indexOf(retryStage) : 0;
     for (const stage of STAGE_ORDER.slice(startIndex)) {
@@ -77,7 +78,7 @@ export async function executePipeline({ source, jobId: requestedJobId = null, re
         throw new Error(`阶段 ${stage} 状态为 completed 但产物契约不通过，拒绝静默覆盖`);
       }
       if (stage === 'deliver') { await runStage(stateFile, state, stage, async () => { await fs.mkdir(path.dirname(delivered), { recursive: true }); await fs.copyFile(videoOutput, delivered); }, { validate: () => validateDeliverContract(contexts.deliver), onEvent: (event, details) => appendEvent(eventsFile, event, details) }); }
-      else { const [command, args, env] = commands[stage]; await runStage(stateFile, state, stage, () => run(command, args, { ...env, ...(sceneId ? { TARGET_SCENE_ID: sceneId } : {}) }), { validate: () => stageIsComplete(stage, contexts[stage]), onEvent: (event, details) => appendEvent(eventsFile, event, details) }); }
+      else { const [invocation, env] = commands[stage]; await runStage(stateFile, state, stage, async () => { const { command, args } = await invocation(); return run(command, args, { ...env, ...(sceneId ? { TARGET_SCENE_ID: sceneId } : {}) }); }, { validate: () => stageIsComplete(stage, contexts[stage]), onEvent: (event, details) => appendEvent(eventsFile, event, details) }); }
     }
     state = await updateTaskState(stateFile, await readTaskState(stateFile), { status: 'delivered', currentStage: null, retryableStage: null, output: delivered });
     await appendEvent(eventsFile, 'job_delivered', { jobId, output: delivered });
