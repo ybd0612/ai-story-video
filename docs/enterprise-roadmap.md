@@ -2,7 +2,7 @@
 
 > 本文档隶属 [DSP 项目总纲](../PROJECT_INDEX.md)，关键路径和当前实现状态以总纲 SSOT 为准。
 >
-> 文档性质：架构评审与后续路线图，不代表本轮已实施。
+> 文档性质：架构评审与后续路线图。E0（执行一致性）与 E1（可复用核心）**已实施**，E2（企业治理）与 E3（平台化）**未实施**；§2、§3 是评审时点快照，实施状态见 §3 的状态表。
 
 ## 1. 目标定义
 
@@ -42,7 +42,16 @@ Agent 控制面
 | 领域扩展能力 | 目前主要固定为故事短视频 |
 | 多租户、权限、成本和审计 | 尚未形成企业级实现 |
 
-## 3. 当前代码中需要优先修正的真实缺口
+## 3. 当时代码中需要优先修正的真实缺口
+
+> ⏱ 本节为 2026-09-05 评审时点的快照。四条缺口已在 **E0 阶段**实现，下列状态以当前代码为准；原文保留作为设计依据。
+
+| 小节 | 评审时点的缺口 | 当前状态 | 代码依据 |
+|---|---|---|---|
+| §3.1 | `readTaskState()` 遇非当前版本直接抛错，无 v1→v2 迁移 | ✅ 已实现：显式迁移器、迁移前备份、migrationHistory、损坏 fail-closed | `scripts/task-state-migrations.mjs`、`task-state.mjs`，测试 `task-state-migration*.test.mjs` |
+| §3.2 | contexts 用任务快照而 commands 仍用外部 `sourcePath` | ✅ 已实现：所有阶段统一读 `jobs/<job-id>/input/story.source.json`，外部路径只留在 metadata | `scripts/pipeline.mjs:58`（`jobSource = paths.inputStory`）、`task-snapshot.mjs` |
+| §3.3 | 阶段产物字段无独立 schema | ✅ 部分实现：`schemas/` 下已分 artifact-envelope / image / audio / prepared / render / delivery / workflow / platform；未覆盖全部运行时字段 | `app/create-video/schemas/` |
+| §3.4 | `runStage()` 只要 action 不抛错就写 completed，契约与状态未闭环 | ✅ 已实现：阶段执行后先验契约再写 completed；`completed` 与契约矛盾时停止并报错，不静默覆盖 | `scripts/stage-contracts.mjs`、`pipeline.mjs:74-80` |
 
 ### 3.1 状态迁移并未真正完成
 
@@ -285,7 +294,7 @@ internal-review
 密钥：只读环境变量或密钥管理服务
 ```
 
-企业部署不能依赖个人绝对路径，例如当前脚本中的 Python 默认路径应改为环境探测或部署配置。
+企业部署不能依赖个人绝对路径。✅ 已落地（提交 `bb3f710`）：`scripts/runtime-tools.mjs` 统一解析 Python，`PYTHON_BIN` 显式优先且不回退，否则按候选探测并要求能 `import edge_tts`；解析规则见 `PROJECT_INDEX.md` §2.4。剩余待办：ffprobe 仍依赖 PATH 上的 `FFPROBE_BIN`，Node 版本未锁定。
 
 配置启动时应做 schema 校验，并在日志中输出脱敏后的配置摘要。
 

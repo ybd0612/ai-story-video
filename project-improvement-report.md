@@ -1,5 +1,25 @@
 # DSP 项目改进审查报告
 
+> 🔴 **时点快照（2026-09-04）**：本报告描述的是当日状态，正文不再更新。其中两条现状描述已被代码推翻——仓库当前跟踪 **100 个文件**（非 42），且已存在 `npm test`（15 个测试文件、37 项）。
+> 逐条建议的落地状态以当前代码为准：
+>
+> | 建议 | 状态 | 代码依据 |
+> |---|---|---|
+> | P0-1 任务状态、失败记录、恢复入口 | ✅ 已实现 | `task-state.mjs`（`status.json`、阶段/镜头状态、`retryableStage`）、`JOB_ID + RESUME=1` |
+> | P0-2 外部调用超时、重试、退避、原子落盘 | ✅ 已实现 | `generate-story-images.mjs` `fetchWithRetry`（`AGNES_REQUEST_TIMEOUT_MS`、`AGNES_MAX_RETRIES`、尊重 `Retry-After`、5xx/429 才重试）、`writeAtomically` |
+> | P0-3 集中命令与环境变量 SSOT、增加 `doctor` | ✅ 已实现 | `npm run doctor`、`PROJECT_INDEX.md` §2 |
+> | P1-4 schema 成为唯一校验入口 | 🟡 部分 | `schemas/` 已按产物分层，`storyRepository` 进入渲染前做运行时校验；`story.schema.json` 与脚本校验规则仍未合并 |
+> | P1-5 并发与重复运行边界 | ✅ 已实现 | `run.lock`、已存在 `status.json` 时拒绝覆盖、渲染经 `--props` 不再写共享 `src/story/currentStory.json` |
+> | P1-6 自动化测试与无密钥 dry-run | ✅ 已实现 | `npm test`（`node --test`）、`npm run dry-run` |
+> | P1-7 媒体缓存绑定输入指纹 | ❌ 未实现 | 图片/音频仍按 `NN-<scene-id>` 文件是否存在决定复用，未校验 prompt/model/size/ratio；风险由「媒体只落在本 job 目录」+ 审核 SHA-256 指纹门禁部分缓解 |
+> | P2-8 视频质量验收 | 🟡 部分 | `stage-contracts.mjs` 校验存在、非空、路径受控与交付 hash；未校验时长误差、分辨率、帧率、编码与音轨 |
+> | P2-9 可观测性与成本统计 | 🟡 部分 | `events.jsonl` 追加式事件并脱敏；无成本/配额账本 |
+> | P2-10 内容运营闭环 | ❌ 未实现 | `data/analytics/` 仍是 `history.md` 镜像，无 `publications.csv`/`insights.md` 结构化数据 |
+> | P2-11 可配置 BGM/混音 | ❌ 未实现 | `StoryScene.tsx` 仅逐镜头旁白 |
+> | P2-12 依赖与环境锁定 | 🟡 部分 | 已固定 `remotion@4.0.459`、`edge-tts@1.0.1`；`react`/`react-dom`/类型包仍用 `^`。Python 个人绝对路径已由 `bb3f710` 移除，改由 `scripts/runtime-tools.mjs` 探测（见总纲 §2.4）；Node 版本仍未锁定 |
+>
+> 现行事实一律以 [项目总纲](PROJECT_INDEX.md) 为准；后续路线见 [`docs/enterprise-roadmap.md`](docs/enterprise-roadmap.md)。
+
 审查日期：2026-09-04
 审查范围：项目结构、文档与 SSOT、故事审核门禁、图片/TTS/Remotion 生成链路、类型与脚本检查、数据与 Git 边界。
 

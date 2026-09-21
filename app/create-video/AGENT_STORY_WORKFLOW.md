@@ -1,6 +1,6 @@
 # Agent 故事短视频工作流
 
-> D 阶段文档状态：默认读取 `data/memory`、`data/context` 与分类 `templates`；旧根数据/模板仅只读兼容。
+> 数据与模板口径：读取可用 `data/memory`、`data/context` 与分类 `templates`；写入一律写 `data/` 根主源和 `templates/` 根模板，再执行 `migrate-layout.mjs mirror` 生成分类副本。映射与规则见 `PROJECT_INDEX.md` §2.5。
 
 > 本文档隶属 [DSP 项目总纲](../../PROJECT_INDEX.md)，路径和任务隔离规则以总纲为准。
 
@@ -77,23 +77,28 @@ npm run dry-run -- ./story.json
 
 `doctor` 只检查运行环境和密钥是否存在，不输出密钥；`dry-run` 只读取故事并检查基本结构，不调用图片、配音服务，也不渲染视频。
 
-## 本地开发
+## 本地检查与渲染
 
-在 `app/create-video` 目录执行：
+本项目**不提供 Remotion Studio 网页预览**，`package.json` 中也没有 `start` 脚本；观察任务只能靠命令行、`status.json` 和 `events.jsonl`。
+
+本地开发在 `app/create-video` 目录执行：
 
 ```bash
-npm run start
+npm run doctor
+npm run dry-run -- ./story.json
+npm run typecheck
+npm test
 ```
 
-Remotion 中选择 `StoryVideo` 预览故事样片。
-
-渲染：
+渲染统一走一键入口，它会为本次运行创建独立任务目录并注入正确的路径：
 
 ```bash
-npm run build:story
+npm run make:video
 ```
 
 输出文件：`jobs/<job-id>/output/story-video.mp4`，并复制到 `outputs/<job-id>/story-video.mp4`。
+
+`npm run render:video` 与别名 `npm run build:story` 只服务于流水线内部阶段：缺省输入是 `./src/story/sampleStory.json`（仓库中不存在，样片实际是 `src/story/sampleStory.ts`），缺省输出是 `./out/story-video.mp4`，缺省 `--public-dir` 是 `./public`。因此**不要把它们当独立渲染命令使用**；确需单跑时必须显式指定 `STORY_CURRENT_FILE`、`VIDEO_OUTPUT`、`JOB_PUBLIC_ROOT`（口径见 `PROJECT_INDEX.md` §2.6）。
 
 ## Agnes 图片 API 接入
 
@@ -102,8 +107,8 @@ npm run build:story
 - Endpoint：`https://api.agnes-ai.cn/v1/images/generations`
 - Model：`agnes-image-2.5-flash`
 - 短视频默认：`size: "1K"`、`ratio: "9:16"`
-- URL 输出：`extra_body.response_format: "url"`，读取 `data[0].url`
-- Base64 输出：`return_base64: true`，读取 `data[0].b64_json`
+- URL 输出：`extra_body.response_format: "url"`，读取 `data[0].url` 后再下载为本地 PNG
+- Base64 输出：**当前脚本未实现**（不发送 `return_base64`，也不读 `data[0].b64_json`）；如后续需要，只改 Provider 或脚本
 - API Key：只读取环境变量 `AGNES_API_KEY`，不写入代码、记忆或故事文件
 
 配置示例见 `.env.example`。批量生成脚本：
@@ -128,7 +133,9 @@ npm run generate:images
 
 ## Edge TTS 配音
 
-使用隔离环境中的 Python `edge-tts` 生成逐镜头 MP3：
+解释器由 `scripts/runtime-tools.mjs` 统一解析（`doctor`、`pipeline`、`generate:tts` 共用同一入口）：设置了 `PYTHON_BIN` 就只用它、不可用时直接报 `PYTHON_BIN_UNUSABLE` 而不静默回退；未设置时依次探测 `VIRTUAL_ENV` 解释器、`py -3`（Windows）、`python`、`python3`，并要求能成功 `import edge_tts`，全部失败报 `PYTHON_RUNTIME_NOT_FOUND`。本机 PATH 上的 Python 未装 `edge_tts`，跑 TTS 前需先设置 `PYTHON_BIN`。
+
+生成逐镜头 MP3：
 
 ```powershell
 $env:EDGE_TTS_VOICE = "zh-CN-YunxiNeural"
@@ -137,7 +144,9 @@ $env:EDGE_TTS_PITCH = "+0Hz"
 npm run generate:tts
 ```
 
-脚本读取 `scene.narration`，生成到当前任务的 `jobs/<job-id>/media/audio/`，使用 `ffprobe` 回填 `audioDurationInSeconds` 和带 0.5 秒余量的 `durationInSeconds`，并输出到任务的 `work/`。图片生成到当前任务的 `media/images/`。Remotion 渲染时通过 `--public-dir` 使用当前任务目录，避免写入共享产物目录。
+脚本读取 `scene.narration`，用 `ffprobe` 测量时长并回填 `audioDurationInSeconds` 与带余量的 `durationInSeconds`（余量由 `AUDIO_PAUSE_SECONDS` 控制，默认 `0.5`），同时把 `audioPath` 写成相对任务根的 `media/audio/<序号>-<scene-id>.mp3`。
+
+⚠️ 落点由环境变量决定，不由脚本自己判断：`STORY_AUDIO_DIR` 缺省 `./public/audio`、`STORY_PUBLIC_ROOT` 缺省 `./`。只有 `make:video` 会注入本任务的 `media/audio/` 与任务根目录，从而写出 `jobs/<job-id>/media/audio/` 与 `work/`。单独执行本命令会落到共享 `public/` 目录，而 JSON 中记录的却是 `media/audio/...`，路径不可解析——正式生产一律走 `make:video`。图片同理（`STORY_IMAGE_DIR` 缺省 `./public/images`）。
 
 ## 故事审核与一键生成
 
@@ -150,15 +159,7 @@ npm run approve:story
 npm run make:video
 ```
 
-也可以分别执行阶段：
-
-```powershell
-npm run validate:story -- ./story.json
-npm run generate:images
-npm run generate:tts
-npm run prepare:story
-npm run render:video
-```
+仅 `validate:story`、`validate:audio`、`dry-run`、`doctor` 可以不带任务上下文直接执行。其余阶段命令（`generate:images`、`generate:tts`、`prepare:story`、`render:video`）的缺省路径指向共享的 `public/`、`out/`，只用于调试；要在调试时复现正式落点，必须自行注入 `STORY_FILE`、`STORY_OUTPUT`、`STORY_IMAGE_DIR`、`STORY_AUDIO_DIR`、`STORY_PUBLIC_ROOT`、`JOB_PUBLIC_ROOT`、`VIDEO_OUTPUT`。
 
 用户确认标题、旁白、分镜和固定人物没有问题后，再放行媒体生成：
 
@@ -167,7 +168,9 @@ npm run approve:story
 npm run make:video
 ```
 
-`make:video` 会检查审核文件。没有确认文件时会立即终止，不调用 Agnes、不生成 TTS，也不渲染视频。通过确认后，命令依次创建时间戳任务目录、执行 Agnes 配图、下载本地图片、Edge TTS 配音、生成任务工作文件，并通过 Remotion `--props` 将当前任务故事传入渲染，不再复制到共享的 `src/story/currentStory.json`。最后复制到 `outputs/<job-id>/`。图片和音频只在当前任务内复用，任务之间不会共享或覆盖。
+`make:video` 会检查审核文件。没有确认文件时会立即终止，不调用 Agnes、不生成 TTS，也不渲染视频。通过确认后，命令依次创建时间戳任务目录、固化 `input/` 不可变快照与 `refs/`、执行 Agnes 配图、下载本地图片、Edge TTS 配音、生成任务工作文件，并通过 Remotion `--props` 将当前任务故事传入渲染，不再复制到共享的 `src/story/currentStory.json`。最后复制到 `outputs/<job-id>/`。图片和音频只在当前任务内复用，任务之间不会共享或覆盖。
+
+失败后可按 `status.json` 恢复：`JOB_ID=<job-id>` 配合 `RESUME=1` 续跑（已 `delivered` 的任务拒绝续跑）；图片与配音支持 `RETRY_STAGE` 加 `SCENE_ID` 做单镜头补偿，并复用仍然有效的产物。
 
 > 说明：当前项目负责“故事 JSON 的保存、审核门禁和媒体生产”。聊天中的 Agent 负责根据主题生成草稿 JSON；项目尚未绑定独立的文本模型 API。
 

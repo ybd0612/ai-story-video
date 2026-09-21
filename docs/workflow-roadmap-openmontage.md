@@ -371,12 +371,14 @@ npm run resume -- --job-id <job-id>
 
 ## 9. 实施结果
 
+> ⏱ 本节为 P0/P1 轮次（2026-09-07 之前）的交付快照，测试数字与提交号只描述当时状态。当前测试基线与实时结果见 `PROJECT_INDEX.md` §2.4。
+
 本轮已完成 P0/P1 实施，最终 QA 通过：
 
 - P0：schema v2 状态、原子写入、阶段契约、任务锁、`render/deliver` 状态纳入；
 - P1：`JOB_ID + RESUME=1` 断点续跑、图片/TTS 指定镜头补偿、有效媒体复用、无效目标拒绝；
 - 交付策略：`completed` 阶段契约失败时停止并报告，不静默覆盖；
-- 验证：`npm test` 7/7、`npm run typecheck`、Node/Python 语法检查通过；未调用真实 Agnes 或 Edge TTS；
+- 该轮验证：`npm test` 当时 7 项全部通过、`npm run typecheck`、Node/Python 语法检查通过；未调用真实 Agnes 或 Edge TTS；
 - 最终修复提交：`a04b26b`、`ca54c58`、`9977ca8`、`4322d18`。
 
 ## 10. 最终建议

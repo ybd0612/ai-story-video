@@ -1,5 +1,7 @@
 # data 与 templates 分层评审概览
 
+> 🔒 **时点快照（分层评审轮次，提交于 2026-09-07）**。三层边界结论仍成立；目录落地口径已在代码中确定，与下文推荐方向有差异——**写入主源是根文件，分类目录是镜像副本**，见 [项目总纲 §2.5](PROJECT_INDEX.md) 与已修订的 [`docs/data-template-boundary.md`](docs/data-template-boundary.md)。
+
 ## 核心结论
 
 `data/` 不应删除，但不能继续承担所有职责。建议明确：

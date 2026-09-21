@@ -2,7 +2,7 @@
 
 > 本文档隶属 [DSP 项目总纲](../PROJECT_INDEX.md)，关键路径和当前实现状态以总纲 SSOT 为准。
 >
-> 文档性质：数据与模板分层及迁移状态说明。A/B/C 已完成，D 已切换文档 SSOT 默认路径；生成代码默认链路保持兼容。
+> 文档性质：数据与模板分层及迁移状态说明。A/B/C 已完成；D 阶段完成的是**读取路径**切换到分类目录，**写入主源仍是 `data/` 与 `templates/` 根文件**（由 `scripts/migrate-layout.mjs` 的 `MAPPINGS` 固定，分类副本必须与主源字节一致）。生成代码默认链路保持兼容。落地口径以 [`PROJECT_INDEX.md` §2.5](../PROJECT_INDEX.md) 为准。
 
 ## 1. 结论
 
@@ -39,7 +39,9 @@ data = 谁在创作、有什么资料、过去发生了什么
 | `data/tasks.md` | AI 任务日志、历史项目维护记录 | `data/operations/` 或 Git 变更记录 | 不应作为每次创作的主要上下文 |
 | `data/feedback/` | 用户对标题、人物、镜头、旁白、成片的反馈 | `data/feedback/` | 保留，但建议一条反馈一个结构化文件 |
 
-B 阶段已建立兼容镜像，C 阶段提供 source/target 一致性校验；D 阶段文档已切换到新 SSOT 默认路径。旧根文件保留为只读兼容入口，不删除、不再新增，生成代码默认链路不变。
+B 阶段已建立兼容镜像（`migrate-layout.mjs mirror`），C 阶段提供 source/target 字节一致性与 catalog hash 校验（`--check`）；D 阶段把**读取**默认路径切到分类目录。但代码里的同步方向是固定的：表中「当前路径」是 `mirror` 的 **source（主源）**，「长期归属建议」列出的分类路径是 **target（镜像副本）**，副本必须与主源完全一致，`mirror` 遇到副本自行改动会直接抛 `Migration target differs` 而不是覆盖。
+
+因此落地口径为：**读取可任选分类路径，写入只写主源，写完跑 `mirror`**。旧根文件不删除、不作为第二套内容各自演化。生成代码默认链路不变。
 
 ## 3. 推荐目标目录
 
@@ -127,9 +129,9 @@ jobs/<job-id>/                 单次执行实例
 - Agent 核心行为硬规则：放 `CLAUDE.md` 和工作流协议；
 - 已完成任务的完整运行日志：放任务目录或后续事件日志，不写进用户偏好。
 
-## 5. 当前最重要的问题：data 读取过宽
+## 5. 当时最重要的问题：data 读取过宽（设计时点，已按本方案处理）
 
-`CLAUDE.md` 当前要求每次生成前读取：
+> 本节记录方案提出时（2026-09-07 之前）的状态，不是当前现状。当时 `CLAUDE.md` 要求每次生成前读取：
 
 ```text
 data/profile.md
@@ -140,7 +142,7 @@ data/profile.md
  templates/
 ```
 
-这会产生四个问题：
+当时会产生四个问题：
 
 1. 每次任务都读取大量与当前主题无关的内容；
 2. `history.md` 和 `tasks.md` 可能把运营记录、项目维护记录带入创作上下文；
@@ -165,8 +167,10 @@ data/profile.md
 仅在维护/复盘任务读取：
 - data/operations/tasks.md
 - data/analytics/publications.csv
-- data/history.md（迁移期间兼容）
+- data/history.md（主源，与 data/analytics/history.md 镜像等价）
 ```
+
+上述清单已在 `CLAUDE.md` 规则 1、规则 7 与 `docs/workflow.md` 中采纳。注意读取路径与写入路径不同：写入一律用上表左侧的主源文件（见 §2 与 `PROJECT_INDEX.md` §2.5）。
 
 关键原则：
 
@@ -206,12 +210,19 @@ data/profile.md
 - 旧文件暂时作为兼容入口，不再继续新增内容；
 - 校验新旧内容一致后，再修改 Agent 默认读取路径。
 
-### 阶段 C：以新目录为 SSOT
+### 阶段 C：以新目录为读取权威
 
-- `data/context/`、`data/knowledge/`、`data/analytics/` 成为权威路径；
+- `data/context/`、`data/knowledge/`、`data/analytics/`、`data/operations/` 成为 Agent 的推荐读取路径；
 - 旧文件只保留迁移说明或删除（需用户确认）；
 - `templates/` 内每类模板有版本号；
 - 每个 job 记录实际加载的上下文和模板版本。
+
+### 阶段 D：读取路径切换（已实施，写入方向与原设想不同）
+
+- 已落地：`CLAUDE.md`、`README.md`、`docs/workflow.md` 与 `AGENT_STORY_WORKFLOW.md` 的**读取**默认路径切到分类目录；`templates/catalog.json` 记录模板与 workflow/profile 的版本和 sha256；job 创建时把 workflow、platform profile 和 catalog 固化到 `input/refs/`。
+- **与原设想的差异**：代码没有把分类目录变成写入权威。`migrate-layout.mjs` 的 `MAPPINGS` 把根文件固定为 source、分类副本固定为必须字节一致的 target，`mirror` 在副本自行改动时直接抛 `Migration target differs`。因此写入仍统一走根主源，改完必须跑 `mirror`。
+- 未落地（原 C 阶段目标）：`templates/catalog.json` 只登记了 4 个条目（`title`、`script` 模板与 workflow、platform profile）并各自带 `version` 与 `sha256`，由 `checkCatalogHashes()` 校验；`style/`、`voice/`、`policy/` 三个分类仍是空占位（只有 `.gitkeep`），`story/` 只有镜像副本，因此「每类模板有版本号」只对已存在的文件成立。扩展名也与本方案设想不同：`story-video.yaml`、`douyin-vertical.yaml` 实际以 `.json` 实现。`data/knowledge/` 尚未拆成 `facts/ideas/resources`，`data/analytics/` 尚无 `publications.csv` 与 `insights.md`。
+- 权威口径统一收录在 `PROJECT_INDEX.md` §2.5，本文件不再各自陈述映射表。
 
 ## 8. 推荐的第一批模板
 

@@ -10,17 +10,24 @@
 
 ### 数据层
 
-`data/` 是项目运行时数据目录。其中 `data/memory/` 保存 DSP 自身可复用的创作规则，是项目记忆 SSOT；`data/context/`、`data/knowledge/`、`data/feedback/` 和 `data/analytics/` 保存用户上下文、知识、反馈和历史，默认不提交。Agent 每次创作前先读取项目记忆，再按任务读取其他资料；用户通过 Agent 提出的修改意见也写回对应目录。`.workbuddy/` 仅属于开发工具，不参与创作记忆。
+`data/` 是项目运行时数据目录。其中 `data/memory/` 保存 DSP 自身可复用的创作规则，是项目记忆 SSOT（随 Git 提交）；`data/context/`、`data/knowledge/`、`data/feedback/`、`data/analytics/` 和 `data/operations/` 保存用户上下文、知识、反馈、发布数据和运营记录，默认不提交。
+
+`data/` 根部的 `profile.md`、`preferences.md`、`knowledge.md`、`history.md`、`tasks.md` 是上述分类目录的**镜像主源**：Agent 可从任一侧读取，但写入只写主源，随后执行 `migrate-layout.mjs mirror` 保持副本一致，映射与规则见 [项目总纲 §2.5](../PROJECT_INDEX.md)。
+
+Agent 每次创作前先读取项目记忆，再按任务读取其他资料；用户通过 Agent 提出的修改意见也写回对应目录。`.workbuddy/` 仅属于开发工具，不参与创作记忆。
 
 ### 任务层
 
 每次生成创建唯一 `jobs/<job-id>/`，包含：
 
-- `input/`：本次输入和审核文件；
-- `work/`：配图、TTS、校验和准备阶段的 JSON；
-- `media/`：本次任务的图片和音频；
+- `input/`：本次不可变输入快照（`story.source.json`、`story.approved`、`snapshot.manifest.json`）与固化的 `refs/`（workflow、platform profile、catalog），resume 时校验其未被篡改；
+- `work/`：配图、TTS、校验和准备阶段的中间 JSON；
+- `media/images/`、`media/audio/`：本次任务的图片和音频；
 - `output/`：本次任务的最终视频；
-- `job.json`：任务元信息。
+- `status.json`：阶段状态、失败原因与可重试阶段，是任务状态的唯一事实源；
+- `events.jsonl`：追加式事件日志，密钥等敏感字段写入前脱敏；
+- `job.json`：任务元信息与 metadata manifest；
+- `run.lock`：运行期本地互斥锁，结束时移除。
 
 ### 交付层
 

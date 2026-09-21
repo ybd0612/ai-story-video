@@ -10,6 +10,8 @@
 
 必须接受任务目录相关环境变量，并将输入、中间结果、媒体和输出写入当前 `jobs/<job-id>/`。禁止固定写入共享的 `public/images/`、`public/audio/` 或 `out/`。
 
+注意：现有单阶段脚本的**缺省值**仍是这些共享路径（`generate-story-images.mjs` 的 `STORY_IMAGE_DIR=./public/images`、`generate-edge-tts.py` 的 `STORY_AUDIO_DIR=./public/audio`、`render-video.mjs` 的 `VIDEO_OUTPUT=./out/story-video.mp4`），靠 `pipeline.mjs` 注入任务目录变量来覆盖。新增能力时不要照抄这套缺省值，也不要把共享路径当成正式落点。
+
 ## 变更检查
 
 ```powershell
@@ -17,11 +19,14 @@ cd app/create-video
 npm run doctor
 npm run typecheck
 npm test
+node scripts/migrate-layout.mjs --check
 node --check scripts/make-video.mjs
 node --check scripts/generate-story-images.mjs
 node --check scripts/prepare-story.mjs
 node --check scripts/render-video.mjs
 ```
+
+`migrate-layout.mjs --check` 会校验 `data/` 与 `templates/` 的主源—镜像一致性以及 `templates/catalog.json` 的 sha256；改过主源或 catalog 收录的文件后必须先跑 `mirror` 再跑 `--check`（口径见 `PROJECT_INDEX.md` §2.5）。
 
 没有真实输入或密钥时，先执行无副作用预检：
 
