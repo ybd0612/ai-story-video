@@ -10,21 +10,22 @@ const PROBE_SCRIPT = [
 
 const PYTHON_PROBE_TIMEOUT_MS = Number(process.env.PYTHON_PROBE_TIMEOUT_MS ?? '15000');
 
-const venvCandidate = (env) => {
+const venvCandidate = (env, platform = process.platform) => {
   const virtualEnv = (env.VIRTUAL_ENV ?? '').trim();
   if (!virtualEnv) return null;
-  const relative = process.platform === 'win32'
+  const relative = platform === 'win32'
     ? ['Scripts', 'python.exe']
     : ['bin', 'python'];
   return path.join(virtualEnv, ...relative);
 };
 
-export const listPythonCandidates = (env = process.env) => {
+// platform 可注入：不注入时这两个分支只有一个能在 CI 覆盖到的 OS 上被执行到
+export const listPythonCandidates = (env = process.env, platform = process.platform) => {
   const explicit = (env.PYTHON_BIN ?? '').trim();
   if (explicit) return { explicit: true, candidates: [[explicit]] };
-  const windows = process.platform === 'win32';
+  const windows = platform === 'win32';
   const candidates = [];
-  const virtual = venvCandidate(env);
+  const virtual = venvCandidate(env, platform);
   if (virtual) candidates.push([virtual]);
   if (windows) candidates.push(['py', '-3']);
   candidates.push(['python'], ['python3']);
@@ -51,8 +52,8 @@ const probe = (argv, timeoutMs) => {
   return { ok: true, bin: command, args: prefixArgs, display, executable, version, edgeTts };
 };
 
-export const resolvePython = async ({ env = process.env, timeoutMs = PYTHON_PROBE_TIMEOUT_MS, probeEntry = probe } = {}) => {
-  const { explicit, candidates } = listPythonCandidates(env);
+export const resolvePython = async ({ env = process.env, timeoutMs = PYTHON_PROBE_TIMEOUT_MS, probeEntry = probe, platform = process.platform } = {}) => {
+  const { explicit, candidates } = listPythonCandidates(env, platform);
   const probed = candidates.map((argv) => probeEntry(argv, timeoutMs));
   const hit = probed.find((entry) => entry.ok);
   if (hit) return hit;
