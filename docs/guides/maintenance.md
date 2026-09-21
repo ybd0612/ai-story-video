@@ -47,6 +47,21 @@ npm run dry-run -- ./story.json
 - `npm test` 中的布局镜像用例会带原因自动 skip（其余用例应全绿），别把它当回归。
 - `.gitattributes` 已固定 `* text=auto eol=lf`。`templates/catalog.json` 与 `data/.migration/layout-map.json` 按字节钉 sha256，若在本机改回 `core.autocrlf=true` 的检出行为会得到 CRLF 文件，catalog 哈希校验将必然失败——遇到 `catalog hash mismatch` 先核对文件行尾，再怀疑内容。
 
+## 依赖与 lockfile
+
+改过依赖（含版本升降）后，必须让 `package-lock.json` 与 `package.json` 保持同步，否则 `npm ci` 会在别的平台上直接失败：
+
+```powershell
+npm install --package-lock-only
+# lockfile 不得残留本机配置的私人镜像，必须是官方源
+grep -c "registry.npmjs.org" package-lock.json
+grep -c "npmmirror" package-lock.json   # 应为 0
+# 用一次性克隆验证 CI 的三步，别只看本机 npm install 能过
+git clone <repo> ../ci-check && cd ../ci-check/app/create-video && npm ci && npm run typecheck && npm test
+```
+
+CI（`.github/workflows/ci.yml`）不安装 ffmpeg 与 `edge_tts`，所以依赖个人 `data/` 主源或可用 Python 解释器的用例会带原因 skip；新增测试若需要外部程序，要么注入 fake，要么显式 skip，不要让它只在个人机器上绿。
+
 ## 体积维护
 
 本项目不提供 Remotion Studio 网页预览，只保留命令行生成链路。`node_modules/.cache/` 和 `node_modules/.remotion/` 是可重建缓存，体积异常时可以清理后重新生成；不要清理 `package-lock.json`。

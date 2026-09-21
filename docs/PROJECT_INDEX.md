@@ -77,6 +77,7 @@ Git 跟踪范围以 `git ls-files | wc -l` 的实时输出为准，本文件不�
 | ffprobe 默认 | `FFPROBE_BIN`，缺省 `ffprobe`（依赖 PATH） |
 | 行尾与指纹稳定性 | `.gitattributes` 固定 `* text=auto eol=lf`（媒体与字体标 binary）。`templates/catalog.json` 与 `data/.migration/layout-map.json` 都按**字节**钉 sha256，若依赖 `core.autocrlf=true` 检出成 CRLF，克隆后指纹必然对不上 |
 | 阶段顺序 | `validate → images → tts → audio-validation → prepare → render → deliver`（`task-state.mjs` `STAGE_ORDER`） |
+| CI | `.github/workflows/ci.yml`：push/PR 上跑 `npm ci` → `npm run typecheck` → `npm test`，Node 矩阵 `22.x` 与 `24.x`（ubuntu-latest）。**不安装 ffmpeg、不装 `edge_tts`**——测试不依赖外部程序；`migrate-layout` 与 `tts-retry` 用例会因缺 `data/` 主源或缺可用 Python 而 skip，属预期语义 |
 | 测试基线 | 以 `cd app/create-video && npm test` 的实时输出为准，本文件不复述项数（历史数字反复过期，见 §7 C-12）。语义：全部通过、无 skip 视为绿；**新克隆**上 `migrate-layout` 与 `tts-retry` 用例会因缺少 `data/` 个人主源或 Python 解释器而带原因 skip，属预期而非回归 |
 
 ### 2.5 `data/` 与 `templates/` 镜像口径（易错，务必照此执行）
@@ -217,6 +218,7 @@ deliver  outputs/<job-id>/story-video.mp4
 | 任何面向结果的变更落地 | `docs/CHANGELOG.md` 追加一条（做了什么、提交号、影响口径） |
 | 做了有影响后续的技术取舍 | 新增 `docs/adr/NNNN-*.md`，并更新 `docs/adr/README.md` 索引；被推翻时旧条目改状态、不删原文 |
 | 新增或移动文档 | 按 §4.4 选目录；更新本总纲 §4 文档地图与 `README.md` 门户导航；跑链接解析校验无断链 |
+| 改依赖 / 改安装方式 | 同步 `package-lock.json`（`npm install --package-lock-only`，且 `resolved` 必须是 `registry.npmjs.org`，不得留本机镜像），并在干净克隆验证 `npm ci`；必要时同步 `.github/workflows/ci.yml` |
 
 必做 4 步：① 先改本总纲 §2；② `grep` 全仓扫旧值残留（含根 README 与快照文档）；③ 更新受影响文档头部状态标记与 §4 状态列；④ 在 §7 登记未解决冲突、在 §8 追加变更日志。
 
@@ -258,6 +260,7 @@ deliver  outputs/<job-id>/story-video.mp4
 | C-13 | §1 声明 `temp/` 为"草稿与中间暂存 · 忽略"，但 `.gitignore` 从未包含 `temp/`，导致 `temp/prenatal-lullaby/` 下 4 份个人题材故事草稿处于**已跟踪**状态，一旦推送即公开 | 🔴 | `.gitignore` ↔ 本文件 §1；受影响 `temp/prenatal-lullaby/{story.draft.json,story.json,story.approved,story.approval-state.json}` | ✅ 2026-09-21 推送前审查发现：`.gitignore` 补 `temp/*` + `!temp/.gitkeep`，并 `git rm --cached -r temp/prenatal-lullaby`（磁盘文件保留，仓库不再跟踪；该路径从未进入远程，故未被公开过）。**教训：审查公开范围要看 `git ls-files` 全集，不能只看本次 diff。** |
 | C-14 | **新克隆的仓库自测不通过**（本机却全绿，故此前不可见）：`core.autocrlf=true` 在检出时把 LF 转 CRLF，使 `templates/catalog.json` 记录的 sha256 与实际字节不符；同时 `migrate-layout.test` 以 `data/` 分类目录为主源，而这些个人文件不入库，干净克隆报 `Migration source missing` | ✅ 已解决 | 实测于等价新克隆：`npm test` 36 项中 2 失败（`catalog-consistency.test.mjs:17`、`migrate-layout.test.mjs:11`） | ✅ 2026-09-21 修复：新增 `.gitattributes`（`* text=auto eol=lf` + 媒体 binary）固定行尾，`git add --renormalize .` 复核为**零改动**（索引本就是 LF，无大规模换行重排）；`migrate-layout.test` 改为探测五组 data 主源，缺失时带原因 skip。本机复验 36/36 通过、`--check` 通过 |
 | C-15 | 2026-09-04 审查报告 P0-2 把"外部调用超时、重试、退避、原子落盘"记为已落地，**实际只对图片调用实现**（`fetchWithRetry` + `writeAtomically`）；TTS 一条 `NoAudioReceived` 就让整个 `tts` 阶段失败，无重试。⚠️ 我 2026-09-21 做全仓核查时把该行标注成 ✅ 已实现，属漏查——只核对了图片侧 | ✅ 已解决 | `generate-edge-tts.py` 原 save 段 ↔ `docs/history/project-improvement-report-2026-09-04.md` P0-2 与顶部状态表；2026-09-21 真跑复现（第 2 镜失败，续跑第 2 次成功） | ✅ 新增 `scripts/tts_retry.py`（逐次新建连接、指数退避 1s/2s/4s、失败删半成品、`EDGE_TTS_MAX_RETRIES` 默认 3）并接入 `generate-edge-tts.py`。回归 `test/tts-retry.test.mjs` 先跑 RED 再跑 GREEN，并做**变异验证**（去掉退避即红、还原即绿）确认真的会咬人；真实 TTS 通路复跑 2 镜头 5.4s 成功、时长与交付片一致。报告顶部状态表已改为 🟡 并注明漏查 |
+| C-16 | 加 CI 时暴露两个依赖管理缺陷：① `package-lock.json` 与 `package.json` **不同步**，缺 `@remotion/compositor-darwin-x64`，`npm ci` 在 Linux/macOS 上直接 EUSAGE 失败（本机是 Windows、一直用 `npm install`，所以看不见）；② lockfile 中 241 条 `resolved` 全部指向本机配置的私人镜像 `registry.npmmirror.com`，等于把个人网络环境钉进公开仓库 | ✅ 已解决 | `app/create-video/package-lock.json`；首次复现于等价新克隆执行 `npm ci` | ✅ `npm install --package-lock-only` 补齐平台条目（仅 +1 包，7 个平台 compositor 齐全），`resolved` 全量改回 `registry.npmjs.org`。验证：干净克隆在无 `PYTHON_BIN`/`AGNES_API_KEY` 下 `npm ci` → `typecheck` → `npm test` 三步全过（2 项按设计 skip）；改官方源后重跑 `npm ci` 实装 197 包、无 integrity 报错 |
 
 ## 8. 变更日志
 

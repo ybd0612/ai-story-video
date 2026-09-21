@@ -8,6 +8,14 @@
 
 ## 2026-09-21
 
+### 最小 CI（并借此暴露 C-16 两个依赖缺陷）
+
+- 新增 `.github/workflows/ci.yml`：push/PR 上跑 `npm ci` → `npm run typecheck` → `npm test`，Node 矩阵 22.x / 24.x（ubuntu-latest），带并发取消与 npm 缓存。不装 ffmpeg 与 `edge_tts`——测试不依赖外部程序，依赖个人 `data/` 或 Python 的用例按设计 skip。
+- **C-16 ①**：`package-lock.json` 与 `package.json` 不同步，缺 `@remotion/compositor-darwin-x64`，`npm ci` 在非 Windows 上直接失败；本机一直用 `npm install` 所以从未暴露。已用 `npm install --package-lock-only` 补齐（仅 +1 包）。
+- **C-16 ②**：lockfile 里 241 条 `resolved` 全部指向本机配置的 `registry.npmmirror.com`，会把个人网络环境钉进公开仓库。已全部改回 `registry.npmjs.org`。
+- 验证（不是推测）：在等价干净克隆、不带 `PYTHON_BIN`/`AGNES_API_KEY` 的条件下，`npm ci` → `typecheck` → `npm test` 三步全过（2 项 skip、0 fail）；改用官方源后本机重跑 `npm ci` 实装 197 个包、无 integrity 报错。
+- 同步：README 快速开始改为 `npm ci`、状态一节写明 CI 覆盖与 skip 语义；总纲 §2.4 新增 CI 口径行、§5 新增"改依赖必须同步 lock 与 CI"、§7 登记 C-16；维护指南补 lockfile 校验要求。
+
 ### 旁白合成加入逐镜头重试（登记 C-15）
 
 - 真跑端到端时复现：`tts` 阶段因微软端点对第 2 个镜头返回 `NoAudioReceived` 而整阶段失败，`RESUME=1` 续跑一次即成功——图片阶段被正确跳过，没有二次消耗已付费的 2 张图。定位过程中排除两个非因：系统时钟零偏移、端点可达（400/0.12s）。

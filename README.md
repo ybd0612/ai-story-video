@@ -21,7 +21,7 @@
 
 ```bash
 cd app/create-video
-npm install
+npm ci                  # 按 package-lock.json 装出与 CI 一致的依赖树
 npm run doctor          # 检查 Node / Python+edge_tts / ffprobe / API Key 是否就绪
 ```
 
@@ -137,7 +137,8 @@ templates/          可复用创作模板（工作流、平台规格、标题与
 
 - 单机、命令行、单人使用；已交付过多条完整成片，测试覆盖状态机、阶段契约、快照不可变性、镜像一致性与故事校验。
 - **新克隆直接 `npm test` 可跑**：涉及个人运行时上下文的镜像用例会在缺 `data/` 主源时带原因自动跳过，其余用例应当全绿（`jobs/`、`outputs/`、`data/` 个人内容均不入库）。
-- **没有 CI**，没有托管的演示视频。
+- **CI**：`.github/workflows/ci.yml` 在 push 与 PR 上跑 `npm ci` → `npm run typecheck` → `npm test`，覆盖 Node 22 与 24；不装 ffmpeg 与 `edge_tts`，因此依赖个人 `data/` 或 Python 解释器的用例会带原因 skip（预期语义，见 `docs/PROJECT_INDEX.md` §2.4）。
+- **没有托管的演示视频**，`jobs/` 与 `outputs/` 不入库。
 - 未做：任务级成本账本、配置化审批策略、provenance 审计、多工作流与平台化。顺序与理由见 [`docs/roadmap/enterprise.md`](docs/roadmap/enterprise.md)。
 
 ## 许可
