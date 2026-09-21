@@ -1,6 +1,6 @@
 # data 与 templates 分层评审概览
 
-> 🔒 **时点快照（分层评审轮次，提交于 2026-09-07）**。三层边界结论仍成立，下文推荐方向已于 2026-09-21 落地：`data/` **分类目录是写入主源**，`data/` 根同名文件是 `mirror` 生成的兼容副本。唯一例外是 `templates/`（根 `title/script` 模板为主源、`templates/story/` 为副本）。详见 [项目总纲 §2.5](PROJECT_INDEX.md) 与 [`docs/data-template-boundary.md`](docs/data-template-boundary.md)。
+> 🔒 **时点快照（分层评审轮次，提交于 2026-09-07）**。三层边界结论仍成立，下文推荐方向已于 2026-09-21 落地：`data/` **分类目录是写入主源**，`data/` 根同名文件是 `mirror` 生成的兼容副本。唯一例外是 `templates/`（根 `title/script` 模板为主源、`templates/story/` 为副本）。详见 [项目总纲 §2.5](../PROJECT_INDEX.md) 与 [`docs/design/data-template-boundary.md`](../design/data-template-boundary.md)。
 
 ## 核心结论
 
@@ -39,4 +39,4 @@ jobs        = 单次运行的输入、状态和产物
 
 本轮只完成方案文档和导航同步，没有迁移现有文件，也没有改变生成代码。
 
-详细方案：`docs/data-template-boundary.md`
+详细方案：`docs/design/data-template-boundary.md`

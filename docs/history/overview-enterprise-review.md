@@ -1,6 +1,6 @@
 # DSP 企业级演进评审概览
 
-> 🔒 **时点快照（企业级评审轮次，提交于 2026-09-07）**。优先级判断与「暂不建议」清单仍有效；下文「必须优先」与「第二阶段」对应的工作已在 E0/E1 落地，实施状态见 [docs/enterprise-roadmap.md §3 状态表](docs/enterprise-roadmap.md)，剩余待做为 E2 企业治理与 E3 平台化。现行事实以 [项目总纲 §2 SSOT](PROJECT_INDEX.md) 为准。
+> 🔒 **时点快照（企业级评审轮次，提交于 2026-09-07）**。优先级判断与「暂不建议」清单仍有效；下文「必须优先」与「第二阶段」对应的工作已在 E0/E1 落地，实施状态见 [docs/roadmap/enterprise.md §3 状态表](../roadmap/enterprise.md)，剩余待做为 E2 企业治理与 E3 平台化。现行事实以 [项目总纲 §2 SSOT](../PROJECT_INDEX.md) 为准。
 
 ## 结论
 
@@ -34,6 +34,6 @@ DSP 已具备稳定单机 Agent 视频流水线基础，但距离企业级方案
 
 ## 交付物
 
-详细路线图：`docs/enterprise-roadmap.md`
+详细路线图：`docs/roadmap/enterprise.md`
 
 提交：`c25170a 增加企业级演进路线图`

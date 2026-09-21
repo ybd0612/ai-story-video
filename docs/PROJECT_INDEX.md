@@ -12,7 +12,7 @@
 | `data/` | 用户运行时上下文；`memory/` 保存 DSP 自身可提交的创作规则，其他子目录为 `context/`、`knowledge/`、`analytics/`、`operations/`、`feedback/` | `memory/README.md` 与 `memory/style-preferences.json` 提交，其余忽略 |
 | `jobs/<job-id>/` | 单次生成的输入、中间文件、媒体和视频 | 忽略 |
 | `outputs/<job-id>/` | 单次生成的最终交付物 | 忽略 |
-| `docs/` | 项目架构、工作流、隐私和维护文档 | 提交 |
+| `docs/` | 全部项目文档：顶层 `PROJECT_INDEX.md`（本总纲）与 `CHANGELOG.md`，分区 `design/`、`guides/`、`roadmap/`、`adr/`、`history/` | 提交 |
 | `templates/` | 可复用模板：`workflows/`、`style/`、`voice/`、`platform/`、`policy/` 及根 `title/script` 模板 | 提交（`templates/story/` 为本机镜像产物，忽略） |
 | `.claude/` | 本地 Agent 规则和技能 | 忽略 |
 | `.neuralmemory/` | 本地记忆数据 | 忽略 |
@@ -141,21 +141,25 @@ deliver  outputs/<job-id>/story-video.mp4
 
 ### 4.1 专属项目文档
 
+文档根在 `docs/`；项目根只保留 `README.md`（门户）与 `CLAUDE.md`（Agent 入口，宿主按固定路径加载，不可移动）。
+
 | 文档 | 管什么 | 状态 | 权威度 |
 |---|---|---|---|
-| `README.md` | 仓库入口、目录原则、运行方式 | 🟢 | 导航，事实引用本总纲 |
-| `PROJECT_INDEX.md` | 本文件：结构、SSOT、同步铁律、冲突登记 | 🟢 | **最高（SSOT）** |
+| `README.md` | 仓库门户：目录原则、运行方式、文档导航 | 🟢 | 导航，事实引用本总纲 |
 | `CLAUDE.md` | Agent 创作与读取行为规则 | 🟢 | 行为规范，路径引用本总纲 |
-| `docs/architecture.md` | 分层架构与目录边界 | 🟢 | 设计说明 |
-| `docs/workflow.md` | 单次任务生成流程 | 🟢 | 设计说明 |
-| `docs/data-and-privacy.md` | 隐私与 Git 边界 | 🟢 | 隐私说明 |
-| `docs/maintenance.md` | 变更检查、排查、体积维护 | 🟢 | 操作手册 |
-| `docs/data-template-boundary.md` | data/templates 分层方案 | 🟡 | 方案文档：A–C 为设计时点描述，落地口径见 §2.5 |
-| `docs/workflow-roadmap-openmontage.md` | 与 OpenMontage 对比、P0/P1 方案 | 🟡 | 方案文档：§9 结果数字为实施时点 |
-| `docs/enterprise-roadmap.md` | E0–E3 演进路线图 | 🟡 | 路线图：§3 缺口清单已被 E0 实现，见该节标注 |
-| `app/create-video/README.md` | 视频子项目说明 | 🟢 | 操作手册 |
-| `app/create-video/AGENT_STORY_WORKFLOW.md` | 故事工作流、Provider 参数、环境变量 | 🟢 | 操作手册，代码级细节最贴近实现 |
-| `templates/README.md` | 模板分类与 A–D 阶段 | 🟢 | 导航 |
+| `docs/PROJECT_INDEX.md` | 本文件：结构、SSOT、同步铁律、冲突登记 | 🟢 | **最高（SSOT）** |
+| `docs/CHANGELOG.md` | 按日期倒序的更新记录 | 🟢 | 更新史唯一入口 |
+| `docs/adr/README.md` | 决策记录索引与写法 | 🟢 | 决策依据 |
+| `docs/design/architecture.md` | 分层架构与目录边界 | 🟢 | 设计说明 |
+| `docs/guides/workflow.md` | 单次任务生成流程 | 🟢 | 设计说明 |
+| `docs/guides/data-and-privacy.md` | 隐私与 Git 边界 | 🟢 | 隐私说明 |
+| `docs/guides/maintenance.md` | 变更检查、排查、体积维护 | 🟢 | 操作手册 |
+| `docs/design/data-template-boundary.md` | data/templates 分层方案 | 🟡 | 方案文档：A–C 为设计时点描述，落地口径见 §2.5 |
+| `docs/roadmap/openmontage-comparison.md` | 与 OpenMontage 对比、P0/P1 方案 | 🟡 | 方案文档：§9 结果数字为实施时点 |
+| `docs/roadmap/enterprise.md` | E0–E3 演进路线图 | 🟡 | 路线图：§3 缺口清单已被 E0 实现，见该节标注 |
+| `app/create-video/README.md` | 视频子项目说明（随代码放置） | 🟢 | 操作手册 |
+| `docs/design/story-workflow.md` | 故事工作流、Provider 参数、环境变量 | 🟢 | 操作手册，代码级细节最贴近实现 |
+| `templates/README.md` | 模板分类与写入口径 | 🟢 | 导航 |
 
 ### 4.2 时点快照（评审与交付记录，不再更新）
 
@@ -163,19 +167,36 @@ deliver  outputs/<job-id>/story-video.mp4
 
 | 文档 | 记录时点 | 状态 |
 |---|---|---|
-| `overview-final.md` | E0/E1 与 A–D 交付 | 🟡 测试数过期；「新目录为 SSOT」结论已于 2026-09-21 随映射反转重新成立 |
-| `overview.md` | P0/P1 工作流实施 | 🔴 测试数过期 |
-| `overview-data-template.md` | data/templates 分层评审 | 🟡 结论有效，落地口径见 §2.5 |
-| `overview-enterprise-review.md` | 企业级评审 | 🟡 优先级仍有效 |
-| `project-improvement-report.md` | 2026-09-04 全面审查 | 🔴 「无 npm test」「42 个跟踪文件」等现状描述已过期 |
-| `project-improvement-report-phase2.md` | 第二阶段记录 | 🔴 测试数过期 |
+| `docs/history/overview-e0-e1-a-d.md` | E0/E1 与 A–D 交付 | 🟡 测试数过期；「新目录为 SSOT」结论已于 2026-09-21 随映射反转重新成立 |
+| `docs/history/overview-p0-p1-workflow.md` | P0/P1 工作流实施 | 🔴 测试数过期 |
+| `docs/history/overview-data-template.md` | data/templates 分层评审 | 🟡 结论有效，落地口径见 §2.5 |
+| `docs/history/overview-enterprise-review.md` | 企业级评审 | 🟡 优先级仍有效 |
+| `docs/history/project-improvement-report-2026-09-04.md` | 2026-09-04 全面审查 | 🔴 「无 npm test」「42 个跟踪文件」等现状描述已过期 |
+| `docs/history/project-improvement-report-phase2-2026-09-04.md` | 第二阶段记录 | 🔴 测试数过期 |
 
 ### 4.3 阅读路径
 
-- 新人上手：`README.md` → `docs/architecture.md` → `docs/workflow.md` → `app/create-video/README.md`
-- 改生成代码：`PROJECT_INDEX.md` §2 → `app/create-video/AGENT_STORY_WORKFLOW.md` → `docs/maintenance.md` → 对应 `docs/*-roadmap*.md`
-- 改数据/模板目录：`PROJECT_INDEX.md` §2.5 → `docs/data-template-boundary.md` → `templates/README.md`
-- 发布/交付核对：`docs/workflow.md` → `docs/data-and-privacy.md`
+- 新人上手：`README.md` → `docs/design/architecture.md` → `docs/guides/workflow.md` → `app/create-video/README.md`
+- 改生成代码：本总纲 §2 → `docs/design/story-workflow.md` → `docs/guides/maintenance.md` → `docs/roadmap/`
+- 改数据/模板目录：本总纲 §2.5 → `docs/design/data-template-boundary.md` → `docs/adr/0002-data-templates-mirror-direction.md` → `templates/README.md`
+- 发布/交付核对：`docs/guides/workflow.md` → `docs/guides/data-and-privacy.md`
+- 查历史与依据：`docs/CHANGELOG.md`（做了什么）→ `docs/adr/`（为什么这么做）→ `docs/history/`（当轮完整快照）
+
+### 4.4 文档放置规则
+
+新写一份文档时按"它回答什么问题"决定落点，**不放项目根**：
+
+| 它回答什么 | 放哪里 | 命名 |
+|---|---|---|
+| 怎么跑、怎么操作 | `docs/guides/` | `<动名词>.md`，如 `workflow.md`、`maintenance.md` |
+| 为什么这样设计、边界在哪 | `docs/design/` | 主题名，如 `architecture.md`、`data-template-boundary.md` |
+| 为什么这样取舍（含被否掉的方案） | `docs/adr/` | `NNNN-短横线标题.md`，状态字段必写 |
+| 还要做什么、差距在哪 | `docs/roadmap/` | `<主题>-roadmap.md` 或对比名 |
+| 这一轮交付了什么（时点快照） | `docs/history/` | `<主题>-<YYYY-MM-DD>.md`，入库即冻结 |
+| 按日期的变更流水 | `docs/CHANGELOG.md` | 单一文件，倒序追加 |
+| 路径、命令、限额、版本等事实 | 本总纲 §2 | 其它文档只引用，不复述 |
+
+项目根只允许两份 Markdown：`README.md`（门户）与 `CLAUDE.md`（Agent 入口）。`app/create-video/README.md`、`templates/README.md` 是所在目录的说明页，随其内容放置，不算破例。
 
 ## 5. 同步铁律
 
@@ -183,13 +204,16 @@ deliver  outputs/<job-id>/story-video.mp4
 
 | 你改了什么 | 必须同步 |
 |---|---|
-| `package.json` scripts / 新增环境变量 | 本总纲 §2.2、`CLAUDE.md` 标准命令、`AGENT_STORY_WORKFLOW.md`、`README.md` 运行段 |
-| 阶段顺序、状态模型、契约 | `docs/workflow.md`、`AGENT_STORY_WORKFLOW.md` 标准流程、`docs/workflow-roadmap-openmontage.md` §9 |
-| Provider / 模型 / 限额 / 默认档位 | 本总纲 §2.3、`AGENT_STORY_WORKFLOW.md` 对应章节、`templates/catalog.json` hash |
-| 目录与路径边界 | 本总纲 §1 与 §2.5、`README.md` 目录原则、`docs/architecture.md`、`docs/data-and-privacy.md`、`templates/README.md`、`.gitignore` |
+| `package.json` scripts / 新增环境变量 | 本总纲 §2.2、`CLAUDE.md` 标准命令、`docs/design/story-workflow.md`、`README.md` 运行段 |
+| 阶段顺序、状态模型、契约 | `docs/guides/workflow.md`、`docs/design/story-workflow.md` 标准流程、`docs/roadmap/openmontage-comparison.md` §9 |
+| Provider / 模型 / 限额 / 默认档位 | 本总纲 §2.3、`docs/design/story-workflow.md` 对应章节、`templates/catalog.json` hash |
+| 目录与路径边界 | 本总纲 §1 与 §2.5、`README.md` 目录原则、`docs/design/architecture.md`、`docs/guides/data-and-privacy.md`、`templates/README.md`、`.gitignore` |
 | `data/` 或根模板内容 | 只改主源，执行 `migrate-layout.mjs mirror`（§2.5） |
 | `templates/` 任何被 catalog 收录的文件 | `templates/catalog.json` 的 path/sha256，然后 `node scripts/migrate-layout.mjs --check` |
 | 一轮方案实施完成 | 对应 roadmap 文档的状态标记 + §4 状态列 + 新增一份时点快照并登记进 §4.2 |
+| 任何面向结果的变更落地 | `docs/CHANGELOG.md` 追加一条（做了什么、提交号、影响口径） |
+| 做了有影响后续的技术取舍 | 新增 `docs/adr/NNNN-*.md`，并更新 `docs/adr/README.md` 索引；被推翻时旧条目改状态、不删原文 |
+| 新增或移动文档 | 按 §4.4 选目录；更新本总纲 §4 文档地图与 `README.md` 门户导航；跑链接解析校验无断链 |
 
 必做 4 步：① 先改本总纲 §2；② `grep` 全仓扫旧值残留（含根 README 与快照文档）；③ 更新受影响文档头部状态标记与 §4 状态列；④ 在 §7 登记未解决冲突、在 §8 追加变更日志。
 
@@ -217,13 +241,13 @@ deliver  outputs/<job-id>/story-video.mp4
 | ID | 冲突 | 严重度 | 涉及位置 | 处置 |
 |---|---|---|---|---|
 | C-01 | 文档称「分类目录是写入权威」，代码却把 `data/` 根文件定义为 mirror **source**、副本必须字节一致，二者相反 | ✅ 已解决 | 起源 `af46bfc`（改文档）↔ `migrate-layout.mjs` MAPPINGS（改代码前） | ✅ **2026-09-21 用户拍板：改代码，让分类目录成为权威。** `MAPPINGS` 中 5 组 data 映射已交换方向，`data/` 根文件降级为向后兼容副本；`data/operations/tasks.md` 独有的 2026-09-08 记录以较新版本覆盖到根副本，`mirror` 与 `--check` 均通过。`templates/` 半区保持根文件为权威（catalog 与 .gitignore 已钉死），该非对称是有意决定，理由记在 §2.5 |
-| C-02 | 文档记录 `npm run start`（Remotion Studio 预览），但 `package.json` 无此脚本，且总纲已声明该入口已移除 | 🔴 | `AGENT_STORY_WORKFLOW.md` 本地开发段 ↔ `package.json:5-21`、`docs/maintenance.md:38` | ✅ 已删除该指引，并说明无网页预览入口 |
-| C-03 | 文档把 `npm run build:story` 当独立可用命令且声称输出进任务目录，实际缺省输入 `src/story/sampleStory.json` 不存在、缺省输出 `./out/` | 🔴 | `AGENT_STORY_WORKFLOW.md` 渲染段、`CLAUDE.md` 标准命令 ↔ `render-video.mjs:11,23` | ✅ 已在 §2.6 与各文档标注为流水线内部命令 |
-| C-04 | 测试数字四处不一致：7/7、26/26、5 项、「没有 npm test」 | 🟡 | `overview.md`、`overview-final.md`、`project-improvement-report*.md`、`docs/workflow-roadmap-openmontage.md:379` | ✅ 快照文档标 🔴 并加时点说明；权威数字统一到 §2.4（15 个测试文件、36 项，2026-09-21 全部通过） |
-| C-05 | `docs/data-and-privacy.md` 称整个 `data/` 不进 Git，实际 `data/memory/` 两份文件已提交 | 🟡 | `docs/data-and-privacy.md:9` ↔ `.gitignore:2-6`、`git ls-files` | ✅ 已补例外说明 |
-| C-06 | `docs/data-template-boundary.md` §5 把「CLAUDE.md 当前要求读取 `data/profile.md` 等根文件」当作现状描述；§7 迁移策略只写到 C 阶段 | 🟡 | 该文件 §5、§7 ↔ `CLAUDE.md` 规则 1 | ✅ 已标注为设计时点，并补 D 阶段与 §2.5 实际方向 |
-| C-07 | `docs/enterprise-roadmap.md` §3 列的 4 条「当前代码缺口」已被 E0 实现（状态迁移、快照唯一输入、契约闭环） | 🟡 | 该文件 §3 ↔ `task-state-migrations.mjs`、`pipeline.mjs:58,79` | ✅ 已加时点与实现状态标注 |
-| C-08 | 文档称 Agnes 支持 Base64 输出（`return_base64` / `data[0].b64_json`），代码只实现 URL | 🟡 | `AGENT_STORY_WORKFLOW.md` Agnes 段 ↔ `generate-story-images.mjs:107-116` | ✅ 已标注为未实现 |
+| C-02 | 文档记录 `npm run start`（Remotion Studio 预览），但 `package.json` 无此脚本，且总纲已声明该入口已移除 | 🔴 | `docs/design/story-workflow.md` 本地开发段 ↔ `package.json:5-21`、`docs/guides/maintenance.md:38` | ✅ 已删除该指引，并说明无网页预览入口 |
+| C-03 | 文档把 `npm run build:story` 当独立可用命令且声称输出进任务目录，实际缺省输入 `src/story/sampleStory.json` 不存在、缺省输出 `./out/` | 🔴 | `docs/design/story-workflow.md` 渲染段、`CLAUDE.md` 标准命令 ↔ `render-video.mjs:11,23` | ✅ 已在 §2.6 与各文档标注为流水线内部命令 |
+| C-04 | 测试数字四处不一致：7/7、26/26、5 项、「没有 npm test」 | 🟡 | `docs/history/overview-p0-p1-workflow.md`、`docs/history/overview-e0-e1-a-d.md`、`project-improvement-report*.md`、`docs/roadmap/openmontage-comparison.md:379` | ✅ 快照文档标 🔴 并加时点说明；权威数字统一到 §2.4（15 个测试文件、36 项，2026-09-21 全部通过） |
+| C-05 | `docs/guides/data-and-privacy.md` 称整个 `data/` 不进 Git，实际 `data/memory/` 两份文件已提交 | 🟡 | `docs/guides/data-and-privacy.md:9` ↔ `.gitignore:2-6`、`git ls-files` | ✅ 已补例外说明 |
+| C-06 | `docs/design/data-template-boundary.md` §5 把「CLAUDE.md 当前要求读取 `data/profile.md` 等根文件」当作现状描述；§7 迁移策略只写到 C 阶段 | 🟡 | 该文件 §5、§7 ↔ `CLAUDE.md` 规则 1 | ✅ 已标注为设计时点，并补 D 阶段与 §2.5 实际方向 |
+| C-07 | `docs/roadmap/enterprise.md` §3 列的 4 条「当前代码缺口」已被 E0 实现（状态迁移、快照唯一输入、契约闭环） | 🟡 | 该文件 §3 ↔ `task-state-migrations.mjs`、`pipeline.mjs:58,79` | ✅ 已加时点与实现状态标注 |
+| C-08 | 文档称 Agnes 支持 Base64 输出（`return_base64` / `data[0].b64_json`），代码只实现 URL | 🟡 | `docs/design/story-workflow.md` Agnes 段 ↔ `generate-story-images.mjs:107-116` | ✅ 已标注为未实现 |
 | C-09 | 根目录 6 份快照文档未登记在 `README.md` 与总纲文档地图中，导致同一事实多版本并存 | 🟡 | 根 `overview*.md`、`project-improvement-report*.md` | ✅ 已登记 §4.2 并加顶部时点警示 |
 | C-10 | `migrate-layout.mjs` 在文件底部无条件执行 CLI，任何 `import` 它的测试都会连带跑一次 `mirror()`，把一条数据漂移放大为多个测试文件失败 | ✅ 已解决 | `migrate-layout.mjs` 底部；原受影响 `test/catalog-consistency.test.mjs:5`、`test/migrate-layout.test.mjs:6` | ✅ 2026-09-21 已加 `pathToFileURL(process.argv[1])` 直接执行守卫，`import` 只导出函数无副作用；`migrate-layout.test.mjs` 的 targets 列表同步改为真实副本路径，若守卫回归该测试会以未捕获异常失败 |
 | C-11 | 生成链路曾把某台机器的 WorkBuddy Python 绝对路径写死在 `doctor.mjs`、`pipeline.mjs`、`run-edge-tts.mjs`，换环境即断链；文档原先也未记录该依赖 | ✅ 已解决 | 提交 `bb3f710` 新增 `scripts/runtime-tools.mjs` 统一解析（含 `runtime-tools.test.mjs`） | ✅ 硬编码路径已移除，解析规则写入 §2.4。本机仍需注意：PATH 上的 Python 未装 `edge_tts`，跑 `doctor`/`make:video` 前要设置 `PYTHON_BIN`，否则三项候选全报 ModuleNotFound 并以 exit=1 结束（刻意的诚实失败，非回归） |
@@ -237,4 +261,5 @@ deliver  outputs/<job-id>/story-video.mp4
 | 2026-09-04 | 全仓评审，输出 P0/P1 改进项 | Ybond |
 | 2026-09-07 | P0/P1、E0/E1、A–D 阶段实施概览并入文档 | Ybond |
 | 2026-09-21 | 以代码为准做全量文档一致性核对：新增 §2.5 镜像方向、§2.6 单阶段命令边界、§2.3 Provider 事实与代码行号依据、§2.4 环境解析规则、§4 文档状态与权威度、§5 同步映射表、§7 冲突登记（C-01～C-11）、§8 变更日志；修正 `npm run start` 失效指引、`build:story` 误用、Base64 未实现、`data/` 忽略范围、过期测试数字、roadmap 缺口清单时点，并把根目录 6 份快照登记进 §4.2。核对期间本项目 HEAD 前进至 `bb3f710`（移除硬编码 Python 路径），§2.4 与 C-11 已按新实现记录。此提交（`35df6e2`）只改文档 | Qoder 代理 |
-| 2026-09-21 | 用户就 C-01 拍板「改代码让分类目录成为写入权威」：`migrate-layout.mjs` 交换 5 组 data 映射方向（templates 半区保持不动并写明理由），`data/operations/tasks.md` 独有的 2026-09-08 记录以较新版本覆盖根副本；补 `import.meta.url` 守卫消除 import 副作用（C-10），`migrate-layout.test.mjs` 的 targets 列表改为真实副本路径。`npm test` 由 35/37 恢复为 **36/36 全通过**，`mirror` 与 `--check` 通过。§2.4/§2.5/§7 与 README、CLAUDE、workflow、architecture、data-template-boundary、AGENT_STORY_WORKFLOW、overview-final 的写入口径同步反转。改动前已备份 `data/` 双侧文件与 layout-map 至 `C:\Users\ybd06\temp\dsp-data-backup-20260921` | Qoder 代理 |
+| 2026-09-21 | 用户就 C-01 拍板「改代码让分类目录成为写入权威」（`3b9cf02`）：`migrate-layout.mjs` 交换 5 组 data 映射方向（templates 半区保持不动并写明理由），`data/operations/tasks.md` 独有的 2026-09-08 记录以较新版本覆盖根副本；补 `import.meta.url` 守卫消除 import 副作用（C-10），`migrate-layout.test.mjs` 的 targets 列表改为真实副本路径。`npm test` 由 35/37 恢复为 **36/36 全通过**，`mirror` 与 `--check` 通过。§2.4/§2.5/§7 与 README、CLAUDE、workflow、architecture、data-template-boundary、story-workflow、overview-final 的写入口径同步反转。改动前已备份 `data/` 双侧文件与 layout-map 至 `C:\Users\ybd06\temp\dsp-data-backup-20260921` | Qoder 代理 |
+| 2026-09-21 | **文档结构重组**：除根级 `README.md` 与 `CLAUDE.md` 外全部文档迁入 `docs/` 并按作用分区（`design/`、`guides/`、`roadmap/`、`adr/`、`history/`），本总纲与新增的 `docs/CHANGELOG.md` 置于 `docs/` 顶层；`AGENT_STORY_WORKFLOW.md` 更名 `docs/design/story-workflow.md`，四份 overview 与两份 report 归档进 `docs/history/` 并带日期；新增 4 条 ADR 与 `CHANGELOG`，把散落各处的"更新内容"与"取舍依据"收敛到单一入口；脚本化重写全部跨文档链接（幂等复跑零改动），链接解析器全量校验无断链。§1 结构表、§4 文档地图、§4.4 放置规则、§5 同步映射同步更新 | Qoder 代理 |

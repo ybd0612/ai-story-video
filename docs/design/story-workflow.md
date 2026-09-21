@@ -2,7 +2,7 @@
 
 > 数据与模板口径：`data/` 写入分类目录主源（`memory/`、`context/`、`knowledge/`、`analytics/`、`operations/`、`feedback/`），`templates/` 写入根 `title/script` 模板与 `workflows/`、`platform/`；两者写完后执行 `migrate-layout.mjs mirror` 生成兼容副本（`data/` 根文件、`templates/story/`），副本不手改。方向差异与映射表见 `PROJECT_INDEX.md` §2.5。
 
-> 本文档隶属 [DSP 项目总纲](../../PROJECT_INDEX.md)，路径和任务隔离规则以总纲为准。
+> 本文档隶属 [DSP 项目总纲](../PROJECT_INDEX.md)，路径和任务隔离规则以总纲为准。
 
 ## 项目入口规则
 

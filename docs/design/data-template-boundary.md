@@ -170,7 +170,7 @@ data/profile.md
 - data/history.md（主源，与 data/analytics/history.md 镜像等价）
 ```
 
-上述清单已在 `CLAUDE.md` 规则 1、规则 7 与 `docs/workflow.md` 中采纳。注意读取路径与写入路径不同：写入一律用上表左侧的主源文件（见 §2 与 `PROJECT_INDEX.md` §2.5）。
+上述清单已在 `CLAUDE.md` 规则 1、规则 7 与 `docs/guides/workflow.md` 中采纳。注意读取路径与写入路径不同：写入一律用上表左侧的主源文件（见 §2 与 `PROJECT_INDEX.md` §2.5）。
 
 关键原则：
 
@@ -219,7 +219,7 @@ data/profile.md
 
 ### 阶段 D：分类目录成为 `data/` 读写权威（`templates/` 例外）
 
-- 已落地：`CLAUDE.md`、`README.md`、`docs/workflow.md` 与 `AGENT_STORY_WORKFLOW.md` 的**读取**默认路径切到分类目录；`templates/catalog.json` 记录模板与 workflow/profile 的版本和 sha256；job 创建时把 workflow、platform profile 和 catalog 固化到 `input/refs/`。
+- 已落地：`CLAUDE.md`、`README.md`、`docs/guides/workflow.md` 与 `docs/design/story-workflow.md` 的**读取**默认路径切到分类目录；`templates/catalog.json` 记录模板与 workflow/profile 的版本和 sha256；job 创建时把 workflow、platform profile 和 catalog 固化到 `input/refs/`。
 - **与 `templates/` 半区的差异**：`data/` 已把分类目录变成写入权威，但 `templates/` 没有跟随反转——根 `title/script` 模板仍是主源，`templates/story/` 仍是副本。原因是 `templates/catalog.json` 按根路径钉 `sha256`、`.gitignore` 已把副本排除在版本库外，反转会连带改动 Git 跟踪范围与指纹固定，收益为零。这处非对称是有意决定，映射表以 `PROJECT_INDEX.md` §2.5 为准。
 - 未落地（原 C 阶段目标）：`templates/catalog.json` 只登记了 4 个条目（`title`、`script` 模板与 workflow、platform profile）并各自带 `version` 与 `sha256`，由 `checkCatalogHashes()` 校验；`style/`、`voice/`、`policy/` 三个分类仍是空占位（只有 `.gitkeep`），`story/` 只有镜像副本，因此「每类模板有版本号」只对已存在的文件成立。扩展名也与本方案设想不同：`story-video.yaml`、`douyin-vertical.yaml` 实际以 `.json` 实现。`data/knowledge/` 尚未拆成 `facts/ideas/resources`，`data/analytics/` 尚无 `publications.csv` 与 `insights.md`。
 - 权威口径统一收录在 `PROJECT_INDEX.md` §2.5，本文件不再各自陈述映射表。

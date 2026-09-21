@@ -18,7 +18,7 @@
 > | P2-11 可配置 BGM/混音 | ❌ 未实现 | `StoryScene.tsx` 仅逐镜头旁白 |
 > | P2-12 依赖与环境锁定 | 🟡 部分 | 已固定 `remotion@4.0.459`、`edge-tts@1.0.1`；`react`/`react-dom`/类型包仍用 `^`。Python 个人绝对路径已由 `bb3f710` 移除，改由 `scripts/runtime-tools.mjs` 探测（见总纲 §2.4）；Node 版本仍未锁定 |
 >
-> 现行事实一律以 [项目总纲](PROJECT_INDEX.md) 为准；后续路线见 [`docs/enterprise-roadmap.md`](docs/enterprise-roadmap.md)。
+> 现行事实一律以 [项目总纲](../PROJECT_INDEX.md) 为准；后续路线见 [`docs/roadmap/enterprise.md`](../roadmap/enterprise.md)。
 
 审查日期：2026-09-04
 审查范围：项目结构、文档与 SSOT、故事审核门禁、图片/TTS/Remotion 生成链路、类型与脚本检查、数据与 Git 边界。
@@ -65,7 +65,7 @@
 
 #### 3. 消除路径与流程文档不一致
 
-证据：`CLAUDE.md` 的标准命令仍包含 `npm run generate:tts`，但 `package.json` 的脚本实际是 `generate:tts` 调用 `scripts/run-edge-tts.mjs`，后者再调用 `scripts/generate-edge-tts.py`；`AGENT_STORY_WORKFLOW.md` 的流程图写成“Python Edge TTS”，而 README 运行说明没有明确 Python 环境、ffprobe 依赖检查。`docs/maintenance.md` 仍以旧的固定 public 路径作为反例，容易让维护者困惑。
+证据：`CLAUDE.md` 的标准命令仍包含 `npm run generate:tts`，但 `package.json` 的脚本实际是 `generate:tts` 调用 `scripts/run-edge-tts.mjs`，后者再调用 `scripts/generate-edge-tts.py`；`AGENT_STORY_WORKFLOW.md` 的流程图写成“Python Edge TTS”，而 README 运行说明没有明确 Python 环境、ffprobe 依赖检查。`docs/guides/maintenance.md` 仍以旧的固定 public 路径作为反例，容易让维护者困惑。
 
 建议：
 - 将命令、环境变量、依赖检查和恢复方式集中到一份 SSOT 文档。

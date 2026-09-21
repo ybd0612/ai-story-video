@@ -2,7 +2,7 @@
 
 > 短视频创作助手核心配置
 >
-> 项目总纲：`PROJECT_INDEX.md`。视频代码和运行细节：`app/create-video/AGENT_STORY_WORKFLOW.md`。
+> 项目总纲：[docs/PROJECT_INDEX.md](docs/PROJECT_INDEX.md)。视频代码和运行细节：[docs/design/story-workflow.md](docs/design/story-workflow.md)。
 
 ## 项目定位
 
@@ -43,7 +43,7 @@ npm run validate:story -- ./story.json
 npm run make:video
 ```
 
-`generate:images`、`generate:tts`、`prepare:story`、`render:video`（及别名 `build:story`）是流水线内部阶段，缺省读写路径指向共享的 `./public/`、`./out/`，且 `render:video` 缺省输入 `src/story/sampleStory.json` 在仓库中并不存在——单独执行会失败，必须显式注入任务目录环境变量。用法与变量清单见 `PROJECT_INDEX.md` §2.2、§2.6 和 `app/create-video/AGENT_STORY_WORKFLOW.md`。
+`generate:images`、`generate:tts`、`prepare:story`、`render:video`（及别名 `build:story`）是流水线内部阶段，缺省读写路径指向共享的 `./public/`、`./out/`，且 `render:video` 缺省输入 `src/story/sampleStory.json` 在仓库中并不存在——单独执行会失败，必须显式注入任务目录环境变量。用法与变量清单见 `PROJECT_INDEX.md` §2.2、§2.6 和 `docs/design/story-workflow.md`。
 
 输出：`jobs/<job-id>/output/story-video.mp4`，并复制到 `outputs/<job-id>/story-video.mp4`。
 

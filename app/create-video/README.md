@@ -1,6 +1,6 @@
 # Agent Story Video
 
-> 本文档隶属 [DSP 项目总纲](../../PROJECT_INDEX.md)，项目路径和输出规则以总纲为准。
+> 本文档隶属 [DSP 项目总纲](../../docs/PROJECT_INDEX.md)，项目路径和输出规则以总纲为准。
 
 Agent 故事短视频生成器：使用 Agent 生成故事 JSON，使用 Agnes Image 2.5 Flash 生成固定人物配图，使用 Edge TTS 生成旁白，最后由 Remotion 导出竖屏短视频。
 
@@ -30,4 +30,4 @@ npm run make:video
 
 `make:video` 会校验审核指纹；故事内容在审核后变更时会拒绝生产。流程会在独立任务目录中生成图片、旁白和中间 JSON，按真实音频时长加 0.5 秒调整镜头，并在 Remotion 渲染前执行硬校验。任务故事通过 `--props` 传入 Remotion，避免并发任务共享 `currentStory.json`；输出位置见项目总纲的任务目录约定。
 
-完整工作流和环境变量说明见 `AGENT_STORY_WORKFLOW.md`。
+完整工作流和环境变量说明见 `docs/design/story-workflow.md`。
