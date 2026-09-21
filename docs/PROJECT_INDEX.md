@@ -145,7 +145,8 @@ deliver  outputs/<job-id>/story-video.mp4
 
 | 文档 | 管什么 | 状态 | 权威度 |
 |---|---|---|---|
-| `README.md` | 仓库门户：目录原则、运行方式、文档导航 | 🟢 | 导航，事实引用本总纲 |
+| `README.md` | 开源门面：项目定位与动机、特性、快速开始、流水线、输入示例、精简导航 | 🟢 | 面向外部读者，事实引用本总纲 |
+| `LICENSE` | MIT 许可（非 Markdown，允许留在根） | 🟢 | 法律文本 |
 | `CLAUDE.md` | Agent 创作与读取行为规则 | 🟢 | 行为规范，路径引用本总纲 |
 | `docs/PROJECT_INDEX.md` | 本文件：结构、SSOT、同步铁律、冲突登记 | 🟢 | **最高（SSOT）** |
 | `docs/CHANGELOG.md` | 按日期倒序的更新记录 | 🟢 | 更新史唯一入口 |
@@ -196,7 +197,7 @@ deliver  outputs/<job-id>/story-video.mp4
 | 按日期的变更流水 | `docs/CHANGELOG.md` | 单一文件，倒序追加 |
 | 路径、命令、限额、版本等事实 | 本总纲 §2 | 其它文档只引用，不复述 |
 
-项目根只允许两份 Markdown：`README.md`（门户）与 `CLAUDE.md`（Agent 入口）。`app/create-video/README.md`、`templates/README.md` 是所在目录的说明页，随其内容放置，不算破例。
+项目根的 Markdown 只允许两份：`README.md`（**介绍优先**——是什么、为什么值得看、怎么跑起来；导航只留精简一节指向本总纲，完整文档地图归 §4 维护）与 `CLAUDE.md`（Agent 入口）。`LICENSE` 等非 Markdown 法律文本允许留在根。`app/create-video/README.md`、`templates/README.md` 是所在目录的说明页，随其内容放置，不算破例。
 
 ## 5. 同步铁律
 

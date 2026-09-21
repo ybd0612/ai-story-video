@@ -1,83 +1,147 @@
-# DSP 故事短视频生成项目
+# ai-story-video
 
-> 代码、用户数据、生成任务和最终输出严格分离。
->
-> 项目总纲：[`PROJECT_INDEX.md`](docs/PROJECT_INDEX.md)
+> 一句主题 → 一条竖屏成片。**Agent 负责创作决策，代码负责确定性生产。**
 
-## 目录原则
+给做 AI 短视频的人用的本地流水线：把"主题/灵感"交给 Agent 产出结构化故事 JSON，人工审核一次，之后配图、旁白、按真实音频时长定镜头节奏、渲染 MP4 全部由脚本完成，产物按任务隔离、可断点续跑、可审计。
 
-```text
- app/create-video/  固定代码路径：Remotion、脚本和运行配置
- data/              用户隐私路径：context、knowledge、analytics、operations、feedback 为写入主源；根下同名 md 为兼容副本；memory/ 为项目创作规则
- jobs/              每次生成的完整任务目录，按时间戳隔离
- outputs/           最终交付文件汇总，按任务隔离
- docs/              全部项目文档：PROJECT_INDEX 总纲、CHANGELOG、design/guides/roadmap/adr/history 分区
- templates/         可复用创作模板（workflows、style、voice、platform、policy 与根 title/script）
-```
+它刻意不做成可视化编排平台。项目边界很小——**一种视频类型、一条固定链路**，把"一次失败可诊断、可重试、可复现"这件事做扎实。
 
-`data/context/`、`data/knowledge/`、`data/feedback/`、`data/analytics/`、`data/operations/`、`data/` 根文件、`templates/story/`、`.claude/`、`.neuralmemory/`、`.workbuddy/`、`jobs/` 和 `outputs/` 均不会提交到 Git；`data/memory/` 仅提交 DSP 自身的结构化创作规则。
+## 特性
 
-读写口径见 [项目总纲](docs/PROJECT_INDEX.md) §2.5：`data/` 只写分类目录主源，`templates/` 只写根模板主源，写完统一执行 `node scripts/migrate-layout.mjs mirror` 生成副本；直接编辑副本会让一致性校验失败。
+- **人工审核指纹门禁**：故事经 SHA-256 指纹绑定，审核后再改内容会直接拒绝生产，不会静默用旧审核出片。
+- **任务级隔离**：每次运行创建独立 `jobs/<YYYYMMDD-HHmmss>-<slug>/`，图片、音频、中间 JSON、成片、状态、事件日志全在里面，任务之间不共享、不覆盖。
+- **断点续跑与镜头级补偿**：`RESUME=1` 从失败阶段继续；配图/配音失败时可只补单个镜头，并复用仍然有效的媒体，不重复烧 API 调用。
+- **阶段产物契约**：状态标记为 `completed` 但产物不满足契约时停止并报错，不假装成功。
+- **音频驱动节奏**：`ffprobe` 测量每段旁白真实时长，按"+0.5s 余量"回填镜头时长，渲染前再做硬校验。
+- **可审计**：追加式 JSONL 事件日志，写入前对密钥与敏感字段脱敏；工作流、平台规格、模板索引在任务创建时固化进任务目录，resume 时检测篡改。
+- **输入快照不可变**：任务只读自己的输入快照，外部文件中途变化不影响正在跑的任务。
 
-## 标准生成流程
+## 快速开始
 
-1. 生成故事前先读取 `data/memory/style-preferences.json`，按题材匹配项目创作风格；再由 Agent 读取 `data/context/profile.md`、`data/context/preferences.md`，按任务选择 `data/knowledge/`、`data/feedback/`、`data/analytics/`；`data/operations/` 仅维护和复盘时读取。
-2. 生成或接收故事 JSON；若草稿未显式填写 `style`，保存故事时自动注入匹配的项目风格，并等待用户确认。
-3. 每次运行创建 `jobs/<时间戳>-<任务名>/`。
-4. 图片、音频、JSON 中间文件和视频全部写入本次任务目录。
-5. 最终视频复制到 `outputs/<任务 ID>/`，不会覆盖其他任务。
-6. 用户对脚本或成片的反馈与任务记录追加到 `data/` 分类目录主源（`feedback/`、`operations/`、`analytics/`、`context/`），供后续生成读取；写完后执行 `node scripts/migrate-layout.mjs mirror` 同步 `data/` 根下的兼容副本。
-
-## 运行
-
-```powershell
+```bash
 cd app/create-video
 npm install
-npm run doctor
-$env:STORY_FILE = "C:/path/to/approved-story.json"
-$env:STORY_APPROVAL_FILE = "C:/path/to/story.approved"
-npm run make:video
+npm run doctor          # 检查 Node / Python+edge_tts / ffprobe / API Key 是否就绪
 ```
 
-标准代码入口：`app/create-video`。正式生产请先经 `npm run save:story` 与 `npm run approve:story` 生成审核指纹，`make:video` 会校验指纹并在缺失审核文件时立即终止；直接设置环境变量仅用于复用已审核的输入。断点续跑、镜头补偿和单阶段命令的适用边界见 [项目总纲](docs/PROJECT_INDEX.md) §2.2 与 §2.6。
+跑一次真实生成需要图片服务的密钥（只从环境变量读，不落盘）：
 
-生成结果示例：
+```bash
+export AGNES_API_KEY=<你的密钥>        # Windows PowerShell: $env:AGNES_API_KEY="<你的密钥>"
+npm run save:story -- ./story.draft.json   # 结构校验 + 清除旧审核状态
+npm run approve:story                      # 人工确认后放行媒体生成
+npm run make:video                         # 一键出片
+```
+
+没有密钥或真实素材时，可以先做无副作用预检：
+
+```bash
+npm run dry-run -- ./story.json
+```
+
+输出：`jobs/<job-id>/output/story-video.mp4`，并复制到 `outputs/<job-id>/`。个人上下文（账号定位、创作偏好）不入库，clone 后按需自备 `data/` 内容即可运行。
+
+## 它是怎么跑起来的
 
 ```text
-jobs/20260902-122542-moon-rabbit-goodnight/
-├─ input/       原始故事和审核信息
-├─ work/        配图、配音和渲染中间 JSON
-├─ media/       本次任务的图片和音频
-└─ output/      本次任务的视频
-
-outputs/20260902-122542-moon-rabbit-goodnight/story-video.mp4
+主题 / 灵感
+   ↓  Agent 产出 story.draft.json（含固定人物设定 character + 逐镜 imagePrompt）
+save:story → 人工审核 → approve:story（SHA-256 指纹绑定）
+   ↓
+validate → images → tts → audio-validation → prepare → render → deliver
+   │         │       │          │
+   │         │       │          └ ffprobe 实测时长回填镜头
+   │         │       └ Edge TTS 逐镜头 MP3
+   │         └ Agnes 图生图（复用同一套人物设定，保证人物一致）
+   └ story.schema.json 结构校验
+   ↓
+jobs/<job-id>/{media,output}/  →  outputs/<job-id>/story-video.mp4
 ```
 
-## 文档入口
+整条链路由 `pipeline.mjs` 驱动，每个阶段都是可独立执行的脚本 + 一份产物契约，Agent 不参与生产环节的判断。
 
-先按你要解决的问题挑一条路：
+## 故事输入长什么样
 
-| 你想做什么 | 看哪份 |
+Agent 必须输出符合 `story.schema.json` 的 JSON，而不是让视频组件去猜自然语言。必填字段为 `id`、`title`、`topic`、`style`、`character`、`scenes`；`character` 必填 `id`、`name`、`description`、`visualTraits`、`wardrobe`；每个 scene 必填 `id`、`title`、`narration`、`imagePrompt`、`durationInSeconds`。
+
+仓库自带示例 `src/story/sampleStory.ts`（节选）：
+
+```jsonc
+{
+  "id": "the-last-lamp",
+  "title": "巷口最后一盏灯",
+  "topic": "一个普通人，在低谷里重新找回生活的故事",
+  "style": "电影感、克制、温暖、现实主义",
+  "character": {                       // 角色圣经：全片复用，保证人物一致
+    "id": "young-programmer-dad",
+    "name": "林默",
+    "description": "a 30-year-old Chinese man, calm and slightly tired, an ordinary office worker and new father",
+    "visualTraits": "short black hair, oval face, warm brown eyes, slim build, subtle tired expression, realistic East Asian features",
+    "wardrobe": "dark navy hoodie, white T-shirt, black casual trousers, simple canvas shoes"
+  },
+  "scenes": [{
+    "id": "opening",
+    "title": "开场：灯还亮着",
+    "narration": "那天晚上，我加班到十一点，整条街都熄了灯，只有巷口那一盏还亮着。",
+    "imagePrompt": "深夜的老城区巷口，一盏暖黄色路灯，湿润的石板路，远处一个疲惫的年轻人背影，电影感，竖屏构图，无文字",
+    "durationInSeconds": 6,
+    "subtitle": "有些灯，不是为了照亮路。"   // 可选，屏幕字幕
+  }]
+}
+```
+
+`character.referenceImage` 可选，提供公共 HTTPS 图片或 Data URI 时走图生图。创作约束写在 [`docs/design/story-workflow.md`](docs/design/story-workflow.md)：前 3 秒要有钩子、一镜一动作、提示词不要求画面内文字、结尾必须有情绪落点、涉及真实人物与医疗法律题材不编造事实。
+
+## 设计取舍
+
+- **不建可视化界面**，Agent 是唯一控制面 → [ADR-0001](docs/adr/0001-agent-only-control-plane.md)
+- **固定单一 Provider 链路**，不提前抽象多供应商 selector → [ADR-0003](docs/adr/0003-single-provider-chain.md)
+- **`data/` 与 `templates/` 的镜像写入方向**（谁是主源） → [ADR-0002](docs/adr/0002-data-templates-mirror-direction.md)
+- **运行时解释器解析不静默回退** → [ADR-0004](docs/adr/0004-python-runtime-resolution.md)
+
+其余决策与全部待做项见 [`docs/adr/`](docs/adr/README.md) 与 [`docs/roadmap/`](docs/roadmap/enterprise.md)。
+
+## 项目结构
+
+```text
+app/create-video/   代码：Remotion 组件、生成脚本、阶段契约、schema、测试
+data/               个人上下文与项目创作记忆（默认不入库）
+jobs/<job-id>/      单次任务的输入快照、中间产物、媒体、成片、状态与事件日志
+outputs/<job-id>/   最终交付副本
+docs/               总纲、更新记录、决策记录、设计、指南、路线、历史快照
+templates/          可复用创作模板（工作流、平台规格、标题与脚本模板）
+```
+
+## 文档
+
+| 你要做什么 | 看哪份 |
 |---|---|
-| 跑通一次生成 | [故事工作流](docs/design/story-workflow.md) → [视频代码说明](app/create-video/README.md) |
-| 弄清路径、命令、限额的权威口径 | [项目总纲 §2](docs/PROJECT_INDEX.md) |
-| 改代码前了解边界与流程 | [架构说明](docs/design/architecture.md) → [生成工作流](docs/guides/workflow.md) → [维护指南](docs/guides/maintenance.md) |
-| 动 `data/` 或 `templates/` 内容 | [总纲 §2.5](docs/PROJECT_INDEX.md) → [边界方案](docs/design/data-template-boundary.md) → [ADR-0002](docs/adr/0002-data-templates-mirror-direction.md) |
-| 看项目做了什么、为什么这样取舍 | [更新记录](docs/CHANGELOG.md) → [决策记录](docs/adr/README.md) |
-| 判断下一步演进方向 | [企业级路线图](docs/roadmap/enterprise.md) → [OpenMontage 对比](docs/roadmap/openmontage-comparison.md) |
+| 查路径、命令、Provider 参数、限额的**唯一权威口径** | [`docs/PROJECT_INDEX.md`](docs/PROJECT_INDEX.md) |
+| 跑通一次生成 / 排查失败 | [`docs/guides/workflow.md`](docs/guides/workflow.md)、[`docs/guides/maintenance.md`](docs/guides/maintenance.md) |
+| 改代码前了解边界与阶段契约 | [`docs/design/architecture.md`](docs/design/architecture.md)、[`docs/design/story-workflow.md`](docs/design/story-workflow.md) |
+| 看项目做了什么 / 为什么这样取舍 | [`docs/CHANGELOG.md`](docs/CHANGELOG.md)、[`docs/adr/`](docs/adr/README.md) |
 
-### 分区清单
+## 运行要求
 
-```text
-docs/PROJECT_INDEX.md   总纲：结构、SSOT 权威口径、同步铁律、冲突登记
-docs/CHANGELOG.md       更新记录（按日期倒序，单一入口）
-docs/adr/               决策记录：背景、决策、后果、证据
-docs/design/            设计与边界：architecture、data-template-boundary、story-workflow
-docs/guides/            操作指南：workflow、maintenance、data-and-privacy
-docs/roadmap/           演进路线：enterprise、openmontage-comparison
-docs/history/           时点快照：各轮交付概览与评审报告，入库即冻结、不再更新
-```
+| 依赖 | 说明 |
+|---|---|
+| Node.js | 运行脚本与 Remotion；测试用内置 `node --test`，无额外测试框架 |
+| Python + `edge_tts` | 旁白合成。由 `PYTHON_BIN` 指定解释器，不设置时按 `VIRTUAL_ENV` → `py -3` → `python` → `python3` 探测，要求能 `import edge_tts`；**显式指定的解释器不可用时直接失败，不回退** |
+| `ffprobe`（FFmpeg） | 测量音频时长 |
+| 图片服务 | Agnes Image 2.5 Flash，密钥 `AGNES_API_KEY`，只读环境变量 |
 
-其它入口：[数据与隐私](docs/guides/data-and-privacy.md)、[模板目录说明](templates/README.md)、[Agent 行为规则](CLAUDE.md)。
+`npm run doctor` 会一次性检查以上全部项（密钥只检查是否存在，不回显）。
 
-除本文件与 `CLAUDE.md`（Agent 入口，宿主按固定路径加载）外，项目根不放 Markdown；新文档的落点规则见 [总纲 §4.4](docs/PROJECT_INDEX.md)。历史快照中的数字与结论均为其记录时点的状态，现状一律以总纲为准。
+## 状态
+
+- 单机、命令行、单人使用；已交付过多条完整成片，测试覆盖状态机、阶段契约、快照不可变性、镜像一致性与故事校验。
+- **没有 CI**，没有托管的演示视频；`jobs/` 与 `outputs/` 不入库，clone 后是干净仓库。
+- 未做：任务级成本账本、配置化审批策略、provenance 审计、多工作流与平台化。顺序与理由见 [`docs/roadmap/enterprise.md`](docs/roadmap/enterprise.md)。
+
+## 许可
+
+MIT，见 [LICENSE](LICENSE)。
+
+## 声明
+
+本项目生成 AI 图片与合成语音，成片内容不代表事实陈述；用于真实人物、医疗、法律、新闻题材前请自行核实，并确保遵守所使用模型服务的条款与发布平台规则。
