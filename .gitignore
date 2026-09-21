@@ -14,6 +14,10 @@ data/*
 jobs/
 outputs/
 
+# 草稿与中间暂存（含未公开的个人题材草稿，一律不入库）
+temp/*
+!temp/.gitkeep
+
 # B 阶段兼容镜像产物（由 migrate-layout mirror 生成，不作为新 SSOT 提交）
 templates/story/title-template.md
 templates/story/script-template.md
