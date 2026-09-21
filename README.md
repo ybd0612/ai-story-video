@@ -1,5 +1,7 @@
 # ai-story-video
 
+[![CI](https://github.com/ybd0612/ai-story-video/actions/workflows/ci.yml/badge.svg)](https://github.com/ybd0612/ai-story-video/actions/workflows/ci.yml)
+
 > 一句主题 → 一条竖屏成片。**Agent 负责创作决策，代码负责确定性生产。**
 
 给做 AI 短视频的人用的本地流水线：把"主题/灵感"交给 Agent 产出结构化故事 JSON，人工审核一次，之后配图、旁白、按真实音频时长定镜头节奏、渲染 MP4 全部由脚本完成，产物按任务隔离、可断点续跑、可审计。
