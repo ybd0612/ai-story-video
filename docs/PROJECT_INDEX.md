@@ -19,7 +19,7 @@
 | `.workbuddy/` | WorkBuddy 的项目状态和开发工具记忆，不属于 DSP 创作记忆 | 忽略 |
 | `temp/` | 草稿与中间暂存 | 忽略 |
 
-Git 当前跟踪 100 个文件（`git ls-files | wc -l`）；`data/` 与 `templates/story/` 的多数内容是本机运行时文件，不入版本库。
+Git 跟踪范围以 `git ls-files | wc -l` 的实时输出为准，本文件不复述具体数量；`data/` 与 `templates/story/` 的多数内容是本机运行时文件，不入版本库。
 
 ## 2. SSOT 权威口径
 
@@ -217,7 +217,7 @@ deliver  outputs/<job-id>/story-video.mp4
 
 必做 4 步：① 先改本总纲 §2；② `grep` 全仓扫旧值残留（含根 README 与快照文档）；③ 更新受影响文档头部状态标记与 §4 状态列；④ 在 §7 登记未解决冲突、在 §8 追加变更日志。
 
-禁止：在其它文档复述 §2 的数值与路径；用「待统一更正」让不一致过夜；未跑代码核实就写命令、路径或测试数字；改完代码不改文档。
+禁止：在其它文档复述 §2 的数值与路径；用「待统一更正」让不一致过夜；未跑代码核实就写命令、路径或测试数字；改完代码不改文档；**给快照写"顶部修订注记"时复述具体数值**——注记只准指向 §2 或可执行命令（如 `git ls-files | wc -l`），钉上数字就等于制造一个比正文更快过期的第二层漂移源（见 §7 C-12）。
 
 完成代码变更后在 `app/create-video/` 执行：`npm run typecheck` → `npm test` → `node scripts/migrate-layout.mjs --check`，通过后再提交 Git（不自动 push）。
 
@@ -251,6 +251,7 @@ deliver  outputs/<job-id>/story-video.mp4
 | C-09 | 根目录 6 份快照文档未登记在 `README.md` 与总纲文档地图中，导致同一事实多版本并存 | 🟡 | 根 `overview*.md`、`project-improvement-report*.md` | ✅ 已登记 §4.2 并加顶部时点警示 |
 | C-10 | `migrate-layout.mjs` 在文件底部无条件执行 CLI，任何 `import` 它的测试都会连带跑一次 `mirror()`，把一条数据漂移放大为多个测试文件失败 | ✅ 已解决 | `migrate-layout.mjs` 底部；原受影响 `test/catalog-consistency.test.mjs:5`、`test/migrate-layout.test.mjs:6` | ✅ 2026-09-21 已加 `pathToFileURL(process.argv[1])` 直接执行守卫，`import` 只导出函数无副作用；`migrate-layout.test.mjs` 的 targets 列表同步改为真实副本路径，若守卫回归该测试会以未捕获异常失败 |
 | C-11 | 生成链路曾把某台机器的 WorkBuddy Python 绝对路径写死在 `doctor.mjs`、`pipeline.mjs`、`run-edge-tts.mjs`，换环境即断链；文档原先也未记录该依赖 | ✅ 已解决 | 提交 `bb3f710` 新增 `scripts/runtime-tools.mjs` 统一解析（含 `runtime-tools.test.mjs`） | ✅ 硬编码路径已移除，解析规则写入 §2.4。本机仍需注意：PATH 上的 Python 未装 `edge_tts`，跑 `doctor`/`make:video` 前要设置 `PYTHON_BIN`，否则三项候选全报 ModuleNotFound 并以 exit=1 结束（刻意的诚实失败，非回归） |
+| C-12 | **快照的"顶部修订注记"本身发生漂移**：为纠正旧数字而写的注记又钉上了新瞬时数字（`37 项`、`100 个文件`），代码继续推进后注记比正文更快过期，形成"三层数字"（正文时点值 / 注记值 / §2.4 实测值） | 🟡 | `docs/history/overview-p0-p1-workflow.md:5`、`overview-e0-e1-a-d.md:6`、`project-improvement-report-2026-09-04.md:3`、`phase2-...md:3` ↔ 本文件 §1 与 §2.4 | ✅ 2026-09-21 复跑治理时发现：四处注记全部改为**只指向 §2.4 或实时命令**（`git ls-files \| wc -l`、`node --test test/*.test.mjs`），不再复述项数与文件数；§1 同步去掉「跟踪 100 个文件」。实测基线复核为 15 个测试文件 36 项全通过。**规则补进 §5：修订注记只写指针，不写数值。** |
 
 ## 8. 变更日志
 
@@ -263,3 +264,4 @@ deliver  outputs/<job-id>/story-video.mp4
 | 2026-09-21 | 以代码为准做全量文档一致性核对：新增 §2.5 镜像方向、§2.6 单阶段命令边界、§2.3 Provider 事实与代码行号依据、§2.4 环境解析规则、§4 文档状态与权威度、§5 同步映射表、§7 冲突登记（C-01～C-11）、§8 变更日志；修正 `npm run start` 失效指引、`build:story` 误用、Base64 未实现、`data/` 忽略范围、过期测试数字、roadmap 缺口清单时点，并把根目录 6 份快照登记进 §4.2。核对期间本项目 HEAD 前进至 `bb3f710`（移除硬编码 Python 路径），§2.4 与 C-11 已按新实现记录。此提交（`35df6e2`）只改文档 | Qoder 代理 |
 | 2026-09-21 | 用户就 C-01 拍板「改代码让分类目录成为写入权威」（`3b9cf02`）：`migrate-layout.mjs` 交换 5 组 data 映射方向（templates 半区保持不动并写明理由），`data/operations/tasks.md` 独有的 2026-09-08 记录以较新版本覆盖根副本；补 `import.meta.url` 守卫消除 import 副作用（C-10），`migrate-layout.test.mjs` 的 targets 列表改为真实副本路径。`npm test` 由 35/37 恢复为 **36/36 全通过**，`mirror` 与 `--check` 通过。§2.4/§2.5/§7 与 README、CLAUDE、workflow、architecture、data-template-boundary、story-workflow、overview-final 的写入口径同步反转。改动前已备份 `data/` 双侧文件与 layout-map 至 `C:\Users\ybd06\temp\dsp-data-backup-20260921` | Qoder 代理 |
 | 2026-09-21 | **文档结构重组**：除根级 `README.md` 与 `CLAUDE.md` 外全部文档迁入 `docs/` 并按作用分区（`design/`、`guides/`、`roadmap/`、`adr/`、`history/`），本总纲与新增的 `docs/CHANGELOG.md` 置于 `docs/` 顶层；`AGENT_STORY_WORKFLOW.md` 更名 `docs/design/story-workflow.md`，四份 overview 与两份 report 归档进 `docs/history/` 并带日期；新增 4 条 ADR 与 `CHANGELOG`，把散落各处的"更新内容"与"取舍依据"收敛到单一入口；脚本化重写全部跨文档链接（幂等复跑零改动），链接解析器全量校验无断链。§1 结构表、§4 文档地图、§4.4 放置规则、§5 同步映射同步更新 | Qoder 代理 |
+| 2026-09-21 | **重组后增量复核**（登记 C-12）：复跑治理发现"为纠正旧数字而写的快照顶部修订注记"自身已成新的漂移源——四处注记钉了 `37 项` / `100 个文件`，与 §2.4 实测及真实 `git ls-files` 均不符。`overview-p0-p1-workflow`、`overview-e0-e1-a-d`、两份 `project-improvement-report*` 的注记与 §1 一律改为指向 §2.4 或实时命令、不再复述数值；§5 禁止清单补入「修订注记只写指针」这条规则。本轮只改文档，未触碰代码 | Qoder 代理 |
