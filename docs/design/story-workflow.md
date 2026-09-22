@@ -110,10 +110,11 @@ npm run make:video
 | `src/compositions/StoryVideo.tsx` | 只按 `planSceneWindows` 摆放 `Sequence`，并把 `Audio` 放在绝对帧上 |
 | `src/components/StoryScene.tsx` | 单镜头视觉：缓动 Ken Burns、标题 spring、逐句字幕、氛围层 |
 
-必须守住两条性质：
+必须守住以下几条性质：
 
 1. **音频绝对锚定**：交叉溶解会把后一镜的画面提前压进来，但旁白永远落在 `audioFrom` 这个绝对帧上。不变量 `audioFrom === visualFrom + audioOffset`，且合成总时长严格等于各镜头时长之和。改任何时间轴逻辑前先跑 `test/scene-plan.test.mjs`。
 2. **切点不得回黑**：相邻镜头靠重叠交叉溶解衔接，画面层不再各自淡出到透明。回归探针是切点附近帧的平均亮度 `YAVG`——实测应保持三位数（97–110），掉到 20 上下就说明又变成闪黑。
+3. **字幕区同一时刻只允许一种文字**：`subtitle` 常与旁白原句或其语序复述重合，会上下两屏显示同一句话。`shouldShowGoldenLine()` 按去标点后的字符重合度判定，≥ 0.6 视为复述并抑制。这是渲染层兜底；源头规范（是否禁止 `subtitle` 与旁白重叠）尚未写进 `story.schema.json` 与创作约束。
 
 性能约束见 [ADR-0005](../adr/0005-atmosphere-render-cost.md)：不对全屏图层做 `transform` 位移，逐帧动画只用 `transform` / `opacity`；改完先用 `--frames=200-499` 定帧测量，再提交。
 

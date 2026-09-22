@@ -125,3 +125,25 @@ export function splitNarrationIntoPhrases(
     return { text: phrase, from, until: clampedUntil, durationInFrames: clampedUntil - from };
   });
 }
+
+const PUNCTUATION = /[\s，、,.。！!？?；;：:—…·"'「」『』（）()【】\[\]]/g;
+const uniqueChars = (text: string) => new Set(text.replace(PUNCTUATION, ''));
+
+/** 金句与旁白的字符重合度达到该比例即视为复述 */
+export const GOLDEN_LINE_OVERLAP_LIMIT = 0.6;
+
+/**
+ * 判断金句行是否值得单独占一屏位置。
+ *
+ * 实测缺陷：多个镜头的 subtitle 就是旁白原句（或其复述），同屏会出现上下两行相同文字。
+ */
+export function shouldShowGoldenLine(subtitle: string | undefined, narration: string): boolean {
+  const line = String(subtitle ?? '').trim();
+  if (!line) return false;
+  const golden = uniqueChars(line);
+  if (golden.size === 0) return false;
+  const spoken = uniqueChars(String(narration ?? ''));
+  let shared = 0;
+  for (const char of golden) if (spoken.has(char)) shared += 1;
+  return shared / golden.size < GOLDEN_LINE_OVERLAP_LIMIT;
+}

@@ -11,7 +11,7 @@ import {
 } from 'remotion';
 import { COLORS, EASING_BEZIER, FONTS, SCENE_MOTION, SPRING } from '../theme';
 import { StoryScene as StorySceneData } from '../story/types';
-import { SceneWindow, splitNarrationIntoPhrases } from '../lib/scene-plan';
+import { SceneWindow, shouldShowGoldenLine, splitNarrationIntoPhrases } from '../lib/scene-plan';
 import { AtmosphereLayer } from './AtmosphereLayer';
 
 type Props = {
@@ -158,7 +158,7 @@ export const StoryScene: React.FC<Props> = ({ scene, index, window, phraseFrames
           })}
         </div>
 
-        {scene.subtitle ? (
+        {shouldShowGoldenLine(scene.subtitle, scene.narration) ? (
           <div
             style={{
               marginTop: 26,

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { planSceneWindows, splitNarrationIntoPhrases } from '../src/lib/scene-plan.ts';
+import { planSceneWindows, splitNarrationIntoPhrases, shouldShowGoldenLine } from '../src/lib/scene-plan.ts';
 
 const FPS = 30;
 const XFADE = 18;
@@ -65,4 +65,12 @@ test('无标点长句按上限硬切，空旁白退化为单段', () => {
   const empty = splitNarrationIntoPhrases('', { fps: FPS, durationFrames: 2 * FPS });
   assert.equal(empty.length, 1);
   assert.equal(empty[0].durationInFrames, 2 * FPS);
+});
+
+// 夹具取自 jobs/20260908-062234-你在海里-听见光/work/currentStory.json 的真实镜头
+test('金句行与旁白重复时抑制，独立时保留', () => {
+  assert.equal(shouldShowGoldenLine('你还没有名字，也没见过光。', '你还没有名字，也没见过光。可你每天都在一片温暖的小海里，轻轻漂着。'), false, '整句被旁白包含时必须抑制');
+  assert.equal(shouldShowGoldenLine('咚，咚，咚——那是妈妈的心跳。', '那是妈妈的心跳。咚，咚，咚。像深夜里的小鼓，也像很远很远的潮水。'), false, '仅语序不同的复述必须抑制');
+  assert.equal(shouldShowGoldenLine('世界的味道，妈妈先替你尝。', '妈妈咬一口草莓，你会尝到一点甜；妈妈晒到太阳，你会觉得暖。'), true, '真正的金句应保留');
+  assert.equal(shouldShowGoldenLine('', '任意旁白'), false, '空金句不占位');
 });
