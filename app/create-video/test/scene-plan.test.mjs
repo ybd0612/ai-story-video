@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { planSceneWindows, splitNarrationIntoPhrases, shouldShowGoldenLine } from '../src/lib/scene-plan.ts';
+import { findDuplicateGoldenLines, planSceneWindows, shouldShowGoldenLine, splitNarrationIntoPhrases } from '../src/lib/scene-plan.ts';
 
 const FPS = 30;
 const XFADE = 18;
@@ -73,4 +73,15 @@ test('金句行与旁白重复时抑制，独立时保留', () => {
   assert.equal(shouldShowGoldenLine('咚，咚，咚——那是妈妈的心跳。', '那是妈妈的心跳。咚，咚，咚。像深夜里的小鼓，也像很远很远的潮水。'), false, '仅语序不同的复述必须抑制');
   assert.equal(shouldShowGoldenLine('世界的味道，妈妈先替你尝。', '妈妈咬一口草莓，你会尝到一点甜；妈妈晒到太阳，你会觉得暖。'), true, '真正的金句应保留');
   assert.equal(shouldShowGoldenLine('', '任意旁白'), false, '空金句不占位');
+});
+
+test('save:story 的复述清单只列重复金句，不误伤真金句', () => {
+  const scenes = [
+    { id: 'a', title: '温暖的小海', narration: '你还没有名字，也没见过光。可你每天都在一片温暖的小海里，轻轻漂着。', subtitle: '你还没有名字，也没见过光。' },
+    { id: 'b', title: '一点甜，一点暖', narration: '妈妈咬一口草莓，你会尝到一点甜；妈妈晒到太阳，你会觉得暖。', subtitle: '世界的味道，妈妈先替你尝。' },
+    { id: 'c', title: '无金句', narration: '随便一句旁白。', subtitle: '' },
+  ];
+  const dup = findDuplicateGoldenLines(scenes);
+  assert.deepEqual(dup.map((x) => x.id), ['a'], `应为 [a]，实际 ${JSON.stringify(dup)}`);
+  assert.equal(dup[0].overlap, 1);
 });

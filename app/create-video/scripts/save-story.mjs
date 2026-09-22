@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { resolveStoryStyle } from './style-memory.mjs';
+import { findDuplicateGoldenLines } from '../src/lib/scene-plan.ts';
 
 const inputFile = process.env.STORY_DRAFT_FILE ?? process.argv[2] ?? './story.draft.json';
 const outputFile = path.resolve(process.env.STORY_FILE ?? './story.json');
@@ -35,5 +36,10 @@ await fs.writeFile(outputFile, `${JSON.stringify(draft, null, 2)}\n`, 'utf8');
 await fs.rm(approvalFile, { force: true });
 const fingerprint = crypto.createHash('sha256').update(JSON.stringify(draft)).digest('hex');
 await fs.writeFile(approvalStateFile, `${JSON.stringify({ status: 'pending', storyFile: outputFile, fingerprint }, null, 2)}\n`, 'utf8');
+const duplicatedGoldenLines = findDuplicateGoldenLines(draft.scenes);
+for (const item of duplicatedGoldenLines) {
+  console.log(`警告：镜头「${item.title}」的 subtitle 与旁白重合 ${Math.round(item.overlap * 100)}%，渲染时会被抑制为不显示；subtitle 应写旁白之外的金句。`);
+}
+
 console.log(`故事草稿已保存：${outputFile}`);
 console.log('当前状态：待审核。确认后执行 npm run approve:story。');

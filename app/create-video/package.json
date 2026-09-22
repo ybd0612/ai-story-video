@@ -12,7 +12,7 @@
     "generate:tts": "node scripts/run-edge-tts.mjs",
     "validate:story": "node scripts/validate-story.mjs",
     "validate:audio": "node scripts/validate-audio-duration.mjs",
-    "save:story": "node scripts/save-story.mjs",
+    "save:story": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/save-story.mjs",
     "approve:story": "node scripts/approve-story.mjs",
     "doctor": "node scripts/doctor.mjs",
     "dry-run": "node scripts/dry-run.mjs",

@@ -20,7 +20,7 @@
 2. 将主题整理为符合 `app/create-video/story.schema.json` 的结构化 JSON，不要让视频组件直接解析自然语言。
 3. 每个故事必须建立 `character` 角色圣经，固定人物描述、外貌特征和服装；可提供 `referenceImage`。
 4. 每个镜头只描述一个动作或情绪变化，图片提示词不要求图片生成文字。
-5. 旁白必须适合口播，前三秒有冲突、悬念或反差，结尾有情绪落点。
+5. 旁白必须适合口播，前三秒有冲突、悬念或反差，结尾有情绪落点。`subtitle` 是可选金句，必须写旁白之外的第二层表达，不要照抄或改写旁白原句——`save:story` 会警告重合度过高的金句，渲染时也会被抑制。
 6. 涉及真实人物、医疗、法律、新闻时，不编造事实，不把虚构内容包装成真实经历。
 7. 完成创作任务后，把任务摘要追加到 `data/operations/tasks.md`，发布内容与复盘写入 `data/analytics/history.md`，确认新的表达偏好后更新 `data/context/preferences.md`；用户反馈直接写入 `data/feedback/`（该目录不在镜像映射内，可自由新增文件）。这些分类目录文件是**主源**，`data/` 根下的 `tasks.md`、`history.md`、`preferences.md`、`profile.md`、`knowledge.md` 是 `mirror` 生成的兼容副本，**不要直接编辑**。每次写完在 `app/create-video/` 执行 `node scripts/migrate-layout.mjs mirror`，并保证 `node scripts/migrate-layout.mjs --check` 通过（映射表见 `PROJECT_INDEX.md` §2.5）。
 

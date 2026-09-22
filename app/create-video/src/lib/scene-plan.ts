@@ -137,13 +137,34 @@ export const GOLDEN_LINE_OVERLAP_LIMIT = 0.6;
  *
  * 实测缺陷：多个镜头的 subtitle 就是旁白原句（或其复述），同屏会出现上下两行相同文字。
  */
-export function shouldShowGoldenLine(subtitle: string | undefined, narration: string): boolean {
-  const line = String(subtitle ?? '').trim();
-  if (!line) return false;
-  const golden = uniqueChars(line);
-  if (golden.size === 0) return false;
+export function goldenLineOverlap(subtitle: string | undefined, narration: string): number {
+  const golden = uniqueChars(String(subtitle ?? ''));
+  if (golden.size === 0) return 0;
   const spoken = uniqueChars(String(narration ?? ''));
   let shared = 0;
   for (const char of golden) if (spoken.has(char)) shared += 1;
-  return shared / golden.size < GOLDEN_LINE_OVERLAP_LIMIT;
+  return shared / golden.size;
+}
+
+export function shouldShowGoldenLine(subtitle: string | undefined, narration: string): boolean {
+  if (!String(subtitle ?? '').trim()) return false;
+  return goldenLineOverlap(subtitle, narration) < GOLDEN_LINE_OVERLAP_LIMIT;
+}
+
+/**
+ * 供 save:story 使用的非阻断检查：列出与旁白重合的金句镜头。
+ * 金句本该是旁白之外的第二层表达，写成旁白原句等于该功能静默失效。
+ */
+export function findDuplicateGoldenLines(
+  scenes: Array<{ id?: string | number; title?: string; narration?: string; subtitle?: string }>,
+): Array<{ id: string; title: string; overlap: number }> {
+  return scenes
+    .map((scene, index) => ({
+      id: String(scene.id ?? index),
+      title: String(scene.title ?? scene.id ?? index),
+      overlap: goldenLineOverlap(scene.subtitle, String(scene.narration ?? '')),
+      hasSubtitle: Boolean(String(scene.subtitle ?? '').trim()),
+    }))
+    .filter((entry) => entry.hasSubtitle && entry.overlap >= GOLDEN_LINE_OVERLAP_LIMIT)
+    .map(({ id, title, overlap }) => ({ id, title, overlap }));
 }
