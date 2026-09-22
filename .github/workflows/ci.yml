@@ -15,15 +15,12 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ['22.x', '24.x']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          # 版本单一来源：仓库根的 .node-version（与 package.json 的 engines 一致，统一 Node 24）
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: app/create-video/package-lock.json
       # 不装 ffmpeg / 不装 edge-tts：测试不依赖外部程序。

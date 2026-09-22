@@ -77,7 +77,8 @@ Git 跟踪范围以 `git ls-files | wc -l` 的实时输出为准，本文件不�
 | ffprobe 默认 | `FFPROBE_BIN`，缺省 `ffprobe`（依赖 PATH） |
 | 行尾与指纹稳定性 | `.gitattributes` 固定 `* text=auto eol=lf`（媒体与字体标 binary）。`templates/catalog.json` 与 `data/.migration/layout-map.json` 都按**字节**钉 sha256，若依赖 `core.autocrlf=true` 检出成 CRLF，克隆后指纹必然对不上 |
 | 阶段顺序 | `validate → images → tts → audio-validation → prepare → render → deliver`（`task-state.mjs` `STAGE_ORDER`） |
-| CI | `.github/workflows/ci.yml`：push/PR 上跑 `npm ci` → `npm run typecheck` → `npm test`，Node 矩阵 `22.x` 与 `24.x`（ubuntu-latest）。**不安装 ffmpeg、不装 `edge_tts`**——测试不依赖外部程序；`migrate-layout` 与 `tts-retry` 用例会因缺 `data/` 主源或缺可用 Python 而 skip，属预期语义 |
+| 运行时版本 | **统一 Node 24**。单一声明：仓库根 `.node-version` = `24` 与 `app/create-video/package.json` 的 `engines.node` = `>=24`；CI 用 `node-version-file` 读同一份，不再维护版本矩阵。下限取 24 的原因：测试用 `node --test` 且直接 `import` `.ts`，依赖默认开启的类型剥离（Node 22.18+/23.6+ 才有） |
+| CI | `.github/workflows/ci.yml`：push/PR 上跑 `npm ci` → `npm run typecheck` → `npm test`（ubuntu-latest，Node 版本取自 `.node-version`）。**不安装 ffmpeg、不装 `edge_tts`**——测试不依赖外部程序；`migrate-layout` 与 `tts-retry` 用例会因缺 `data/` 主源或缺可用 Python 而 skip，属预期语义。注意 `cancel-in-progress: true`：连续推送时只有最新提交会被验证 |
 | 渲染性能基线 | 呈现层改动必须用**定帧区间**测性能，不整片试错：`node node_modules/@remotion/cli/remotion-cli.js render src/index.ts StoryVideo out.mp4 --public-dir <job> --frames=200-499`。参考值（本机 2026-09-21）：300 帧约 22–26s，全片 1796 帧 123s。约束理由与归因数据见 [ADR-0005](adr/0005-atmosphere-render-cost.md) |
 | 测试基线 | 以 `cd app/create-video && npm test` 的实时输出为准，本文件不复述项数（历史数字反复过期，见 §7 C-12）。语义：全部通过、无 skip 视为绿；**新克隆**上 `migrate-layout` 与 `tts-retry` 用例会因缺少 `data/` 个人主源或 Python 解释器而带原因 skip，属预期而非回归 |
 

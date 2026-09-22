@@ -129,7 +129,7 @@ templates/          可复用创作模板（工作流、平台规格、标题与
 
 | 依赖 | 说明 |
 |---|---|
-| Node.js | 运行脚本与 Remotion；测试用内置 `node --test`，无额外测试框架 |
+| Node.js | **统一 Node 24**（`engines.node` 与仓库根 `.node-version` 已声明，CI 读同一份）。运行脚本与 Remotion；测试用内置 `node --test`，无额外测试框架 |
 | Python + `edge_tts` | 旁白合成。由 `PYTHON_BIN` 指定解释器，不设置时按 `VIRTUAL_ENV` → `py -3` → `python` → `python3` 探测，要求能 `import edge_tts`；**显式指定的解释器不可用时直接失败，不回退** |
 | `ffprobe`（FFmpeg） | 测量音频时长 |
 | 图片服务 | Agnes Image 2.5 Flash，密钥 `AGNES_API_KEY`，只读环境变量 |
