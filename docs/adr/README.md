@@ -15,3 +15,4 @@
 | [ADR-0002](0002-data-templates-mirror-direction.md) | `data/` 分类目录与 `templates/` 根文件各自的镜像写入方向 | 已接受 |
 | [ADR-0003](0003-single-provider-chain.md) | 固定单一 Provider 链路，不提前抽象多 Provider | 已接受 |
 | [ADR-0004](0004-python-runtime-resolution.md) | Python 解释器解析收敛为单一入口且不静默回退 | 已接受 |
+| [ADR-0005](0005-atmosphere-render-cost.md) | 氛围层禁止全屏 transform 动画，逐帧只改 transform/opacity，改后用定帧测量把关 | 已接受 |

@@ -8,6 +8,15 @@
 
 ## 2026-09-21
 
+### 呈现层改造（交叉溶解 + 逐句字幕 + 缓动运镜 + 氛围层）
+
+- 修掉一个一直存在的硬伤：旧版每镜自行淡入淡出，导致每个切点压到近黑。同一素材 6 个切点的最低平均亮度 `YAVG` 由 20.5–21.6 提升到 97.6–110.1，闪黑消失。
+- 新增 `src/lib/scene-plan.ts`：时间轴数学（画面窗口重叠、音频绝对锚点、旁白分句与时间窗）抽成纯函数；`StoryVideo` 只摆 `Sequence` 并把 `Audio` 放在绝对帧，转场因此不会拖动声音。
+- `StoryScene` 重写：五组方向轮换的 Ken Burns（`Easing.bezier(breathe)`）、标题 `spring` 入场、旁白按句上屏（不再整段糊屏）、叠加 `AtmosphereLayer`（噪声驱动尘埃 + 静态光感 + 暗角）。`theme.ts` 中此前定义了却零引用的 `SPRING` / `EASING_BEZIER` 正式接入。
+- 性能归因：首版 300 帧 63s（基线 22s）。逐项关闭法定位为"全屏渐变做 transform + 微粒用 left/top 定位"叠加触发整层重光栅化（关任一成分即回到 21–23s）。改为静态渐变的透明度呼吸 + 微粒 `translate3d` 后 300 帧 26s，全片 1796 帧 **123 秒，优于旧版 133.7 秒**。约束写入 [ADR-0005](adr/0005-atmosphere-render-cost.md)，总纲 §2.4 新增定帧测量基线。
+- 新增 6 项不变量测试并做变异验证（音频偏移写死立即红 2 项、取消交叉夹紧立即红 1 项）。
+- 同素材 A/B：时长完全一致（59.925333s），体积 42.08 MB 对旧版 42.21 MB。
+
 ### 最小 CI（并借此暴露 C-16 两个依赖缺陷）
 
 - 新增 `.github/workflows/ci.yml`：push/PR 上跑 `npm ci` → `npm run typecheck` → `npm test`，Node 矩阵 22.x / 24.x（ubuntu-latest），带并发取消与 npm 缓存。不装 ffmpeg 与 `edge_tts`——测试不依赖外部程序，依赖个人 `data/` 或 Python 的用例按设计 skip。

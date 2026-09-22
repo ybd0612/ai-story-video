@@ -100,6 +100,23 @@ npm run make:video
 
 `npm run render:video` 与别名 `npm run build:story` 只服务于流水线内部阶段：缺省输入是 `./src/story/sampleStory.json`（仓库中不存在，样片实际是 `src/story/sampleStory.ts`），缺省输出是 `./out/story-video.mp4`，缺省 `--public-dir` 是 `./public`。因此**不要把它们当独立渲染命令使用**；确需单跑时必须显式指定 `STORY_CURRENT_FILE`、`VIDEO_OUTPUT`、`JOB_PUBLIC_ROOT`（口径见 `PROJECT_INDEX.md` §2.6）。
 
+## 呈现层与动效约束
+
+渲染层分三块，职责严格分开：
+
+| 文件 | 职责 |
+|---|---|
+| `src/lib/scene-plan.ts` | 纯时间轴数学：画面窗口重叠与音频绝对锚点、旁白分句与时间窗分配。唯一有不变量测试的地方 |
+| `src/compositions/StoryVideo.tsx` | 只按 `planSceneWindows` 摆放 `Sequence`，并把 `Audio` 放在绝对帧上 |
+| `src/components/StoryScene.tsx` | 单镜头视觉：缓动 Ken Burns、标题 spring、逐句字幕、氛围层 |
+
+必须守住两条性质：
+
+1. **音频绝对锚定**：交叉溶解会把后一镜的画面提前压进来，但旁白永远落在 `audioFrom` 这个绝对帧上。不变量 `audioFrom === visualFrom + audioOffset`，且合成总时长严格等于各镜头时长之和。改任何时间轴逻辑前先跑 `test/scene-plan.test.mjs`。
+2. **切点不得回黑**：相邻镜头靠重叠交叉溶解衔接，画面层不再各自淡出到透明。回归探针是切点附近帧的平均亮度 `YAVG`——实测应保持三位数（97–110），掉到 20 上下就说明又变成闪黑。
+
+性能约束见 [ADR-0005](../adr/0005-atmosphere-render-cost.md)：不对全屏图层做 `transform` 位移，逐帧动画只用 `transform` / `opacity`；改完先用 `--frames=200-499` 定帧测量，再提交。
+
 ## Agnes 图片 API 接入
 
 当前已按 Agnes Image 2.5 Flash 文档接入：
